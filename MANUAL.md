@@ -39,24 +39,37 @@
     pip install -r requirements.txt
     ```
 
-4.  **ตั้งค่า OAuth 2.0 กับ GitHub:**
+4.  **ตั้งค่า OAuth 2.0:**
+
+    ### GitHub OAuth
     *   ไปที่ [GitHub Developer Settings](https://github.com/settings/developers)
-    *   เลือกเมนู **OAuth Apps** > กดปุ่ม **New OAuth App**
-    *   กรอกข้อมูลดังนี้:
-        *   **Application name:** `Tic-Tac-Toe App` (หรือชื่อที่ต้องการ)
-        *   **Homepage URL:** `http://localhost:5173`
-        *   **Authorization callback URL:** `http://localhost:8000/auth/callback/github`
-    *   กด **Register application**
-    *   คุณจะได้รับ **Client ID** และต้องกดปุ่ม **Generate a new client secret** เพื่อรับ **Client Secret**
+    *   เลือก **OAuth Apps** > **New OAuth App**
+    *   Homepage URL: `http://localhost:5173`
+    *   Callback URL: `http://localhost:8000/auth/callback/github`
+    *   เก็บ Client ID และ Secret ไว้
+
+    ### Google OAuth
+    *   ไปที่ [Google Cloud Console](https://console.cloud.google.com/)
+    *   สร้าง Project ใหม่
+    *   ไปที่ **APIs & Services** > **OAuth consent screen**
+        *   เลือก **User Type** เป็น **External** แล้วกด Create
+        *   กรอกชื่อ App และอีเมลผู้ติดต่อ
+        *   **(สำคัญ)** ในขั้นตอน **Test users** ให้กด **+ ADD USERS** แล้วใส่อีเมล Gmail ของคุณที่จะใช้ทดสอบLogin ลงไป
+    *   ไปที่ **Credentials** > **Create Credentials** > **OAuth client ID**
+    *   Application type: **Web application**
+    *   Authorized redirect URIs: `http://localhost:8000/auth/callback/google`
+    *   เก็บ Client ID และ Secret ไว้
 
 5.  **สร้างไฟล์ตั้งค่า Environment:**
     *   สร้างไฟล์ชื่อ `.env` ในโฟลเดอร์ `backend`
-    *   คัดลอกเนื้อหาด้านล่างไปใส่ และแทนที่ `YOUR_CLIENT_ID` และ `YOUR_CLIENT_SECRET` ด้วยค่าที่ได้จาก GitHub:
+    *   ใส่ข้อมูลตามนี้:
 
     ```env
     SECRET_KEY=supersecretkey_change_this_to_something_random
     GITHUB_CLIENT_ID=YOUR_GITHUB_CLIENT_ID
     GITHUB_CLIENT_SECRET=YOUR_GITHUB_CLIENT_SECRET
+    GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
     ```
 
 6.  **เริ่มรัน Backend Server:**

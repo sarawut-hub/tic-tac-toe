@@ -9,6 +9,10 @@ export const loginWithGitHub = () => {
   window.location.href = 'http://localhost:8000/auth/login/github';
 };
 
+export const loginWithGoogle = () => {
+  window.location.href = 'http://localhost:8000/auth/login/google';
+};
+
 export const fetchUser = async () => {
   try {
     const response = await api.get('/api/users/me');

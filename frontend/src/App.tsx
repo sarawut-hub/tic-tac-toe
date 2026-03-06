@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { loginWithGitHub, fetchUser } from './api';
+import { loginWithGitHub, loginWithGoogle, fetchUser } from './api';
 import Game from './components/Game';
 import Leaderboard from './components/Leaderboard';
 import { 
@@ -11,9 +11,11 @@ import {
   CircularProgress, 
   Paper,
   ThemeProvider,
-  createTheme
+  createTheme,
+  Stack
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import GoogleIcon from '@mui/icons-material/Google';
 
 const theme = createTheme({
     palette: {
@@ -67,18 +69,34 @@ function App() {
                         <Typography variant="body1" paragraph>
                             Please login to play and save your score.
                         </Typography>
-                        <Button
-                            variant="contained"
-                            startIcon={<GitHubIcon />}
-                            onClick={loginWithGitHub}
-                            sx={{ 
-                                backgroundColor: '#24292e', 
-                                '&:hover': { backgroundColor: '#1a1f24' },
-                                mt: 2
-                            }}
-                        >
-                            Login with GitHub
-                        </Button>
+                        <Stack spacing={2} direction="column" alignItems="center" mt={2}>
+                            <Button
+                                variant="contained"
+                                startIcon={<GitHubIcon />}
+                                onClick={loginWithGitHub}
+                                sx={{ 
+                                    backgroundColor: '#24292e', 
+                                    '&:hover': { backgroundColor: '#1a1f24' },
+                                    width: '100%',
+                                    maxWidth: 300
+                                }}
+                            >
+                                Login with GitHub
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={<GoogleIcon />}
+                                onClick={loginWithGoogle}
+                                sx={{ 
+                                    backgroundColor: '#db4437', 
+                                    '&:hover': { backgroundColor: '#c53929' },
+                                    width: '100%',
+                                    maxWidth: 300
+                                }}
+                            >
+                                Login with Google
+                            </Button>
+                        </Stack>
                     </Paper>
                 ) : (
                     <Box width="100%" display="flex" flexDirection="column" alignItems="center">
