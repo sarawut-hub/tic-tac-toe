@@ -4,7 +4,7 @@ import Game from './Game';
 import Podium from './Podium';
 import CharacterCustomizer from './CharacterCustomizer';
 import Character, { AvatarConfig } from './Character';
-import { getSession, getSessionPlayers, updateAvatar } from '../api';
+import { getSession, getSessionPlayers, updateAvatar, joinSession } from '../api';
 
 interface JoinSessionProps {
     sessionCode: string;
@@ -31,7 +31,17 @@ const JoinSession: React.FC<JoinSessionProps> = ({ sessionCode, user, onUpdateUs
         } else {
             setIsCustomizing(true); // Default to customizing if new
         }
-    }, [user.id]);
+        
+        // Join session immediately
+        joinSession(sessionCode).catch(e => {
+            console.error("Failed to join session initially", e);
+            if (e.response && e.response.status === 400) {
+                 alert("Cannot join session: " + e.response.data.detail);
+                 // Maybe redirect back?
+            }
+        });
+
+    }, [user.id, sessionCode]);
 
     useEffect(() => {
         // Reset local session score on session code change

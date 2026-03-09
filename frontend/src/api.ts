@@ -12,6 +12,33 @@ const api = axios.create({
   withCredentials: true,
 });
 
+api.interceptors.request.use((config) => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('access_token');
+      // Only reload if we are not already at the root/login screen to avoid loops?
+      // Or just signal the app.
+      if (window.location.pathname !== '/') {
+          window.location.href = '/'; 
+      } else {
+          // If we are at root, maybe we just need to refresh to show login form
+          // But React state might be stale.
+          window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const loginWithGitHub = () => {
   window.location.href = `${API_BASE_URL}/auth/login/github`;
 };
@@ -48,10 +75,10 @@ export const recordGameResult = async (result: 'win' | 'lose' | 'draw', timeTake
   return response.data;
 };
 
-export const submitQuizAnswer = async (questionId: number, answerIndex: number, timeTaken: number, sessionCode?: string) => {
+export const submitQuizAnswer = async (questionId: number, answerText: string, timeTaken: number, sessionCode?: string) => {
   const response = await api.post('/api/game/quiz_answer', {
       question_id: questionId,
-      answer_index: answerIndex,
+      answer_text: answerText,
       time_taken: timeTaken,
       session_code: sessionCode
   });

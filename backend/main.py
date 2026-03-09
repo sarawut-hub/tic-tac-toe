@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from database import engine
 import models
-from routers import auth, game
+from routers import auth, game, sessions, questions
 from fastapi.middleware.cors import CORSMiddleware
 
 models.Base.metadata.create_all(bind=engine)
@@ -23,6 +23,8 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/auth")
 app.include_router(game.router, prefix="/api")
+app.include_router(sessions.router, prefix="/api")
+app.include_router(questions.router, prefix="/api")
 
 @app.get("/")
 def read_root():

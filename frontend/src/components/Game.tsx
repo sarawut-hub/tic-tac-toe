@@ -156,8 +156,11 @@ const Game: React.FC<{
   const handleQuizAnswer = async (index: number) => {
       if (!quizQuestion) return;
       try {
-          const response: any = await submitQuizAnswer(quizQuestion.id, index, gameDuration, sessionCode);
-          onUpdateUser(response.user);
+          const answerText = quizQuestion.options[index];
+          const response: any = await submitQuizAnswer(quizQuestion.id, answerText, gameDuration, sessionCode);
+          if (response.user) onUpdateUser(response.user);
+          else onUpdateUser(response); // If returns user directly
+          
           if (response.session_score !== undefined && onSessionScoreUpdate) {
                onSessionScoreUpdate(response.session_score);
           }
@@ -191,9 +194,9 @@ const Game: React.FC<{
           gridTemplateColumns: 'repeat(3, 1fr)', 
           gap: 1.5,
           p: 2,
-          bgcolor: '#FFE66D', // Bright yellow backplate
+          bgcolor: '#37474f', // Darker to contrast
           borderRadius: 4,
-          boxShadow: '0 8px 0px rgba(0,0,0,0.1)' 
+          boxShadow: '0 8px 16px rgba(0,0,0,0.1)' 
       }}>
         {board.map((val, idx) => (
           <Square key={idx} value={val} onClick={() => handleClick(idx)} />

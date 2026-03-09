@@ -17,9 +17,10 @@ const Square: React.FC<SquareProps> = ({ value, onClick }) => {
         fontSize: '2rem',
         fontWeight: 'bold',
         color: value === 'X' ? 'primary.main' : 'secondary.main',
-        borderColor: 'grey.300',
+        borderColor: 'grey.400',
+        bgcolor: '#ffffff',
         '&:hover': {
-          backgroundColor: 'grey.100',
+          backgroundColor: '#f5f5f5',
         },
       }}
     >

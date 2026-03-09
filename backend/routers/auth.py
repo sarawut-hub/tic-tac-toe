@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
 import httpx
 import os
@@ -8,6 +8,7 @@ import models
 from datetime import datetime, timedelta
 from jose import jwt
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv()
 
@@ -16,6 +17,9 @@ router = APIRouter()
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+class EmployeeLogin(BaseModel):
+    employee_id: str
 
 GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
@@ -58,6 +62,47 @@ async def get_current_user(request: Request, db: Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     return user
+
+@router.post("/login/employee")
+def login_employee(login_data: EmployeeLogin, response: Response, db: Session = Depends(get_db)):
+    employee_id = login_data.employee_id
+    if not employee_id:
+        raise HTTPException(status_code=400, detail="Employee ID is required")
+    
+    # Prefix to distinguish from OAuth
+    provider_id = f"employee_{employee_id}"
+    username = f"emp_{employee_id}"
+    
+    # Simple check for admin: if employee ID is 'admin' or '9999'
+    is_admin = (employee_id.lower() == 'admin' or employee_id == '9999')
+
+    user = db.query(models.User).filter(models.User.provider_id == provider_id).first()
+    if not user:
+        # Create new user
+        user = models.User(
+            provider_id=provider_id,
+            username=username,
+            email=None, 
+            score=0,
+            current_streak=0,
+            is_admin=is_admin,
+            # bot_difficulty=1, total_games=0, wins=0 # defaults
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    elif is_admin and not user.is_admin:
+        # Promote existing user if condition changes
+        user.is_admin = True
+        db.commit()
+    
+    # Create JWT
+    token = create_access_token({"sub": user.username})
+    
+    # Set cookie
+    response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
+    
+    return {"access_token": token, "token_type": "bearer", "user": user}
 
 @router.get("/login/github")
 async def login_github():
@@ -170,3 +215,9 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
         response = RedirectResponse(url="http://localhost:5173/") 
         response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
         return response
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(key="access_token")
+    return {"message": "Logged out successfully"}
+
