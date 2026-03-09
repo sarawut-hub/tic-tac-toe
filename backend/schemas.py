@@ -11,6 +11,7 @@ class User(UserBase):
     id: int
     score: int
     current_streak: int
+    bot_difficulty: int = 1
     is_admin: bool
 
     class Config:

@@ -13,6 +13,7 @@ class User(Base):
     score = Column(Integer, default=0)
     current_streak = Column(Integer, default=0) # Consecutive wins against bot
     answered_questions = Column(JSON, default=[]) # List of question IDs answered
+    bot_difficulty = Column(Integer, default=1) # Difficulty level 1-5
     is_admin = Column(Boolean, default=False)
 
 class GameSession(Base):

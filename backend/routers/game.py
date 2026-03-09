@@ -18,6 +18,10 @@ def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(
     session_score = None
     question_data = None
     
+    # Ensure bot_difficulty is initialized (for older records or safety)
+    if getattr(user, "bot_difficulty", None) is None:
+        user.bot_difficulty = 1
+
     # Update regular score
     if score_update.result == "win":
         user.score += 1
@@ -25,6 +29,11 @@ def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(
         if user.current_streak == 3:
             user.score += 1 # Bonus point
             user.current_streak = 0 # Reset streak
+            
+            # Increase difficulty (max 5)
+            if user.bot_difficulty < 5:
+                user.bot_difficulty += 1
+
         
         # Chance to get a quiz question (30% -> increased to 100% for testing? No, stick to random or ask user if they want always)
         # User requested modification to logic, imply keeping chance but changing *what* is returned.
@@ -70,6 +79,11 @@ def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(
     elif score_update.result == "lose":
         user.score -= 1
         user.current_streak = 0 # Reset streak
+        # Decrease difficulty (min 1)
+        if getattr(user, "bot_difficulty", None) is None:
+            user.bot_difficulty = 1
+        if user.bot_difficulty > 1:
+            user.bot_difficulty -= 1
     else:
         pass # Draw
 
