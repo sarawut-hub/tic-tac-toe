@@ -100,7 +100,14 @@ def login_employee(login_data: EmployeeLogin, response: Response, db: Session = 
     token = create_access_token({"sub": user.username})
     
     # Set cookie
-    response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
+    # response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
+        secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+    )
     
     return {"access_token": token, "token_type": "bearer", "user": user}
 
@@ -158,7 +165,13 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
         
         # Redirect to frontend with token
         response = RedirectResponse(url="http://localhost:5173/") # Vite frontend
-        response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False) # secure=False for localhost
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
+            secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+        )
         return response
 
 @router.get("/callback/google")
@@ -213,7 +226,13 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
 
         # Redirect to frontend with token
         response = RedirectResponse(url="http://localhost:5173/") 
-        response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
+        response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
+            secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+        )
         return response
 
 @router.post("/logout")
