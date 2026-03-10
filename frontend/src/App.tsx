@@ -44,19 +44,15 @@ function App() {
         window.history.replaceState({}, document.title, "/");
     }
 
-    const savedToken = localStorage.getItem('access_token');
-    if (savedToken) {
-        fetchUser().then((u) => {
-            if (u) {
-                setUser(u);
-            } else {
-                localStorage.removeItem('access_token');
-            }
-            setLoading(false);
-        });
-    } else {
+    // Try fetch user anyway (cookie might exist even if no localStorage token)
+    fetchUser().then((u) => {
+        if (u) {
+            setUser(u);
+        } else {
+            localStorage.removeItem('access_token');
+        }
         setLoading(false);
-    }
+    });
   }, []);
 
   if (loading) {

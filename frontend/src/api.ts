@@ -20,14 +20,18 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('access_token');
-      // Only reload if we are not already at the root/login screen to avoid loops?
-      // Or just signal the app.
-      if (window.location.pathname !== '/') {
-          window.location.href = '/'; 
-      } else {
-          // If we are at root, maybe we just need to refresh to show login form
-          // But React state might be stale.
-          window.location.reload();
+      // Ignore 401 for /api/users/me to avoid loop, let App.tsx handle it (show login)
+      if (error.config.url.includes('/api/users/me')) {
+          return Promise.reject(error);
+      }
+      
+      const basePath = import.meta.env.BASE_URL || '/';
+      // Normalize paths to avoid mismatch (e.g. trailing slashes)
+      const currentPath = window.location.pathname.replace(/\/+$/, "");
+      const targetPath = basePath.replace(/\/+$/, "");
+
+      if (currentPath !== targetPath) {
+          window.location.href = basePath; 
       }
     }
     return Promise.reject(error);
