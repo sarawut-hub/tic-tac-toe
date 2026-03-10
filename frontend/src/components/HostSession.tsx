@@ -7,14 +7,12 @@ import {
     List, 
     ListItem, 
     ListItemText, 
-    Divider,
     Paper,
     FormControl,
     InputLabel,
     Select,
     MenuItem,
-    Chip,
-    CircularProgress
+    Chip
 } from '@mui/material';
 import { QRCodeCanvas } from 'qrcode.react';
 import { createSession, getSession, getSessionPlayers, startSession, endSession, fetchQuestions } from '../api';

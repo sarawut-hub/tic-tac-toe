@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { loginWithGitHub, loginWithGoogle, loginWithEmployee, fetchUser, logout } from './api';
 import Game from './components/Game';
 import Leaderboard from './components/Leaderboard';

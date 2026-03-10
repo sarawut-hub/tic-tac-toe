@@ -80,7 +80,7 @@ const Game: React.FC<{
     newBoard[i] = 'X';
     setBoard(newBoard);
     setIsXNext(false);
-    checkGameStatus(newBoard, false);
+    checkGameStatus(newBoard);
   };
 
   const makeBotMove = () => {
@@ -109,10 +109,10 @@ const Game: React.FC<{
     newBoard[move] = 'O';
     setBoard(newBoard);
     setIsXNext(true);
-    checkGameStatus(newBoard, true);
+    checkGameStatus(newBoard);
   };
 
-  const checkGameStatus = (currentBoard: (string | null)[], isBot: boolean) => {
+  const checkGameStatus = (currentBoard: (string | null)[]) => {
     const win = calculateWinner(currentBoard);
     if (win) {
       setWinner(win);

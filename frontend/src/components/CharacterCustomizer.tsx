@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Button, Typography, Paper, Grid, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, Button, Typography, Paper, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import Character, { AvatarConfig } from './Character';
 
 interface CharacterCustomizerProps {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, CircularProgress, Paper, List, ListItem, ListItemText, Button, Avatar } from '@mui/material';
+import { Box, Typography, CircularProgress, Paper, List, ListItem, ListItemText, Button } from '@mui/material';
 import Game from './Game';
 import Podium from './Podium';
 import CharacterCustomizer from './CharacterCustomizer';
