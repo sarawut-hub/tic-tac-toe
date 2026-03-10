@@ -100,13 +100,12 @@ def login_employee(login_data: EmployeeLogin, response: Response, db: Session = 
     token = create_access_token({"sub": user.username})
     
     # Set cookie
-    # response.set_cookie(key="access_token", value=token, httponly=True, samesite='lax', secure=False)
     response.set_cookie(
         key="access_token",
         value=token,
-        httponly=True,
-        samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
-        secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+        httponly=True, 
+        samesite='None', # สำคัญ: อนุญาตข้ามโดเมน
+        secure=True # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
     )
     
     return {"access_token": token, "token_type": "bearer", "user": user}
@@ -164,7 +163,12 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
         token = create_access_token({"sub": user.username, "id": user.id})
         
         # Redirect to frontend with token
-        response = RedirectResponse(url="http://localhost:5173/") # Vite frontend
+        # Check environment to decide redirect URL
+        redirect_base = os.getenv("FRONTEND_URL", "http://localhost:5173/") # Add FRONTEND_URL to env vars in Render
+        if "github.io" in redirect_base and not redirect_base.endswith("tic-tac-toe/"):
+             redirect_base = "https://sarawut-hub.github.io/tic-tac-toe/"
+
+        response = RedirectResponse(url=redirect_base) 
         response.set_cookie(
             key="access_token",
             value=token,
@@ -225,7 +229,11 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
         token = create_access_token({"sub": user.username, "id": user.id})
 
         # Redirect to frontend with token
-        response = RedirectResponse(url="http://localhost:5173/") 
+        redirect_base = os.getenv("FRONTEND_URL", "http://localhost:5173/")
+        if "github.io" in redirect_base and not redirect_base.endswith("tic-tac-toe/"):
+             redirect_base = "https://sarawut-hub.github.io/tic-tac-toe/"
+
+        response = RedirectResponse(url=redirect_base) 
         response.set_cookie(
             key="access_token",
             value=token,
