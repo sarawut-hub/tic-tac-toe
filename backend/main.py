@@ -3,19 +3,17 @@ from database import engine
 import models
 from routers import auth, game, sessions, questions
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-origins = [
-    "http://localhost:5173", # Vite frontend
-    "http://localhost:3000",
-]
+ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ORIGINS + ["*"], # อนุญาตหมดในช่วงแรกเพื่อให้เทสง่าย (Production ควรระบุเจาะจง)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
