@@ -3,9 +3,10 @@ import { Box } from '@mui/material';
 import { keyframes } from '@emotion/react';
 
 export interface AvatarConfig {
-    color: string;
-    face: string;
-    accessory: string;
+    seed: string;
+    style: string; // 'adventurer' | 'lorelei' | 'notionists' | 'avataaars' | 'bottts'
+    backgroundColor?: string;
+    options?: Record<string, string>; // { hair: 'long01', eyes: 'variant04' } etc.
 }
 
 const bounce = keyframes`
@@ -26,95 +27,50 @@ interface CharacterProps {
 }
 
 const Character: React.FC<CharacterProps> = ({ config, size = 100, cheering = false }) => {
-    const { color, face, accessory } = config;
+    // Default to 'adventurer' if style is missing or old config is passed
+    const style = config.style || 'adventurer';
+    const seed = config.seed || 'Felix';
+    
+    // Build query params including custom options
+    const params = new URLSearchParams();
+    params.append('seed', seed);
+    if (config.backgroundColor) {
+        params.append('backgroundColor', config.backgroundColor.replace('#', ''));
+    }
+    
+    // Append any extra options if present
+    if (config.options) {
+        Object.entries(config.options).forEach(([key, value]) => {
+            if (value) params.append(key, value);
+        });
+    }
+
+    // Construct DiceBear URL
+    // Using version 9.x which is stable
+    const avatarUrl = `https://api.dicebear.com/9.x/${style}/svg?${params.toString()}`;
 
     return (
         <Box
             sx={{
                 width: size,
-                height: size * 1.2,
-                position: 'relative',
+                height: size,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 animation: cheering ? `${cheer} 1s infinite ease-in-out` : `${bounce} 3s infinite ease-in-out`,
-                filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.1))'
+                filter: 'drop-shadow(0px 4px 8px rgba(0,0,0,0.2))',
+                transition: 'all 0.3s ease'
             }}
         >
-            {/* Body */}
-            <Box
-                sx={{
-                    width: '80%',
-                    height: '80%',
-                    bgcolor: color,
-                    borderRadius: '40% 40% 45% 45%', // Egg shape
-                    position: 'absolute',
-                    bottom: 0,
-                    zIndex: 1,
-                    border: '3px solid rgba(0,0,0,0.1)'
-                }}
-            />
-
-            {/* Face */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    zIndex: 2,
-                    top: '40%',
-                    fontSize: size * 0.35,
-                    lineHeight: 1,
-                    userSelect: 'none'
-                }}
-            >
-                {face}
-            </Box>
-
-            {/* Accessory */}
-            {accessory !== 'none' && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        zIndex: 3,
-                        top: '10%',
-                        fontSize: size * 0.4,
-                        lineHeight: 1,
-                        userSelect: 'none'
-                    }}
-                >
-                    {accessory === 'crown' && '👑'}
-                    {accessory === 'bow' && '🎀'}
-                    {accessory === 'glasses' && '👓'}
-                    {accessory === 'hat' && '🧢'}
-                    {accessory === 'flower' && '🌸'}
-                </Box>
-            )}
-
-            {/* Hands (Simple circles) */}
-            <Box
-                sx={{
-                    position: 'absolute',
-                    width: size * 0.2,
-                    height: size * 0.2,
-                    bgcolor: color,
-                    borderRadius: '50%',
-                    left: '-5%',
-                    top: '55%',
-                    zIndex: 0,
-                    animation: cheering ? `${bounce} 0.5s infinite alternate` : 'none'
-                }}
-            />
-            <Box
-                sx={{
-                    position: 'absolute',
-                    width: size * 0.2,
-                    height: size * 0.2,
-                    bgcolor: color,
-                    borderRadius: '50%',
-                    right: '-5%',
-                    top: '55%',
-                    zIndex: 0,
-                    animation: cheering ? `${bounce} 0.5s infinite alternate-reverse` : 'none'
-                }}
+            <img 
+                src={avatarUrl} 
+                alt="Avatar" 
+                style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain',
+                    borderRadius: style === 'bottts' ? '10%' : '0' // Bottts look nice with rounded corners
+                }} 
             />
         </Box>
     );

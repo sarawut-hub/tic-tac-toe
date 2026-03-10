@@ -1,8 +1,8 @@
 import React from 'react';
-import { Box, Typography, Paper, List, ListItem, ListItemText, ListItemAvatar, Avatar, Button } from '@mui/material';
+import { Box, Typography, Paper, List, ListItem, ListItemText, ListItemAvatar, Button } from '@mui/material';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
-import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import { keyframes } from '@emotion/react';
+import Character from './Character';
 
 interface PodiumProps {
     players: any[];
@@ -21,6 +21,14 @@ const float = keyframes`
   50% { transform: translateY(-10px); }
   100% { transform: translateY(0px); }
 `;
+
+const getAvatarConfig = (user: any) => {
+    try {
+        return user.avatar_config ? JSON.parse(user.avatar_config) : { seed: user.username };
+    } catch {
+        return { seed: user.username };
+    }
+};
 
 const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
     // Sort descending by score
@@ -50,7 +58,7 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
             </Typography>
 
             {/* Podium Blocks */}
-            <Box display="flex" alignItems="flex-end" justifyContent="center" gap={{ xs: 1, sm: 3 }} my={{ xs: 3, sm: 6 }} sx={{ height: { xs: 240, sm: 300 }, width: '100%' }}>
+            <Box display="flex" alignItems="flex-end" justifyContent="center" gap={{ xs: 1, sm: 3 }} my={{ xs: 3, sm: 6 }} sx={{ height: { xs: 280, sm: 360 }, width: '100%' }}>
                 
                 {/* 2nd Place */}
                 <Box 
@@ -61,11 +69,10 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                 >
                     {top3[1] ? (
                         <>
-                            <Avatar sx={{ bgcolor: '#C0C0C0', width: { xs: 48, sm: 64 }, height: { xs: 48, sm: 64 }, mb: 1, border: '4px solid white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
-                                <Typography variant="h6" fontWeight="bold" color="white" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>2</Typography>
-                            </Avatar>
-                            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.8rem', sm: '1rem' } }}>{top3[1].user.username}</Typography>
-                            <Typography variant="caption" color="text.secondary" mb={1}>{top3[1].session_score} pts</Typography>
+                            <Box sx={{ mb: -2, zIndex: 1 }}>
+                                <Character config={getAvatarConfig(top3[1].user)} size={80} cheering />
+                            </Box>
+                            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.8rem', sm: '1rem' }, mb: 0.5, zIndex: 2, bgcolor: 'rgba(255,255,255,0.8)', px: 1, borderRadius: 1 }}>{top3[1].user.username}</Typography>
                             <Paper 
                                 elevation={0}
                                 sx={{ 
@@ -77,11 +84,13 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                                     position: 'relative',
                                     display: 'flex',
                                     justifyContent: 'center',
-                                    alignItems: 'flex-end',
+                                    alignItems: 'center',
+                                    flexDirection: 'column',
                                     pb: 2
                                 }} 
                             >
-                                <Typography variant="h2" fontWeight={900} color="rgba(0,0,0,0.05)" sx={{ fontSize: { xs: '3rem', sm: '3.75rem' } }}>2</Typography>
+                                <Typography variant="h4" fontWeight={900} color="text.secondary">2</Typography>
+                                <Typography variant="caption" fontWeight="bold">{top3[1].session_score} pts</Typography>
                             </Paper>
                         </>
                     ) : (
@@ -98,12 +107,12 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                 >
                      {top3[0] ? (
                         <>
-                            <EmojiEventsRoundedIcon sx={{ fontSize: { xs: 40, sm: 60 }, color: '#FFD700', filter: 'drop-shadow(0 4px 0 rgba(0,0,0,0.1))', animation: `${float} 3s ease-in-out infinite` }} />
-                            <Avatar sx={{ bgcolor: '#FFD700', width: { xs: 60, sm: 80 }, height: { xs: 60, sm: 80 }, mb: 1.5, border: '4px solid white', boxShadow: '0 8px 16px rgba(255, 215, 0, 0.4)' }}>
-                                <Typography variant="h4" fontWeight="bold" color="white" sx={{ fontSize: { xs: '1.2rem', sm: '2rem' } }}>1</Typography>
-                            </Avatar>
-                            <Typography variant="subtitle1" fontWeight={900} noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.9rem', sm: '1.2rem' } }}>{top3[0].user.username}</Typography>
-                            <Typography variant="body2" color="primary" fontWeight="bold" mb={1}>{top3[0].session_score} pts</Typography>
+                            <EmojiEventsRoundedIcon sx={{ fontSize: { xs: 30, sm: 40 }, color: '#FFD700', filter: 'drop-shadow(0 4px 0 rgba(0,0,0,0.1))', animation: `${float} 3s ease-in-out infinite`, mb: -1 }} />
+                            <Box sx={{ mb: -3, zIndex: 2 }}>
+                                <Character config={getAvatarConfig(top3[0].user)} size={120} cheering />
+                            </Box>
+                            <Typography variant="subtitle1" fontWeight={900} noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.9rem', sm: '1.2rem' }, mb: 0.5, zIndex: 3, bgcolor: 'rgba(255,255,255,0.9)', px: 1.5, borderRadius: 1 }}>{top3[0].user.username}</Typography>
+                            
                             <Paper 
                                 elevation={4}
                                 sx={{ 
@@ -114,12 +123,14 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                                     borderTopRightRadius: { xs: 10, sm: 16 },
                                     display: 'flex',
                                     justifyContent: 'center',
-                                    alignItems: 'flex-end',
+                                    alignItems: 'center',
+                                    flexDirection: 'column',
                                     pb: 2,
                                     boxShadow: '0 10px 20px rgba(255, 215, 0, 0.3)'
                                 }} 
                             >
-                                <StarRoundedIcon sx={{ fontSize: { xs: 40, sm: 60 }, color: 'rgba(255,255,255,0.3)' }} />
+                                <Typography variant="h3" fontWeight={900} color="white">1</Typography>
+                                <Typography variant="body1" fontWeight="bold" color="white">{top3[0].session_score} pts</Typography>
                             </Paper>
                         </>
                     ) : (
@@ -136,11 +147,10 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                 >
                     {top3[2] ? (
                         <>
-                            <Avatar sx={{ bgcolor: '#CD7F32', width: { xs: 48, sm: 64 }, height: { xs: 48, sm: 64 }, mb: 1, border: '4px solid white', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
-                                <Typography variant="h6" fontWeight="bold" color="white" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>3</Typography>
-                            </Avatar>
-                            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.8rem', sm: '1rem' } }}>{top3[2].user.username}</Typography>
-                            <Typography variant="caption" color="text.secondary" mb={1}>{top3[2].session_score} pts</Typography>
+                             <Box sx={{ mb: -2, zIndex: 1 }}>
+                                <Character config={getAvatarConfig(top3[2].user)} size={80} cheering />
+                            </Box>
+                            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ maxWidth: '100%', fontSize: { xs: '0.8rem', sm: '1rem' }, mb: 0.5, zIndex: 2, bgcolor: 'rgba(255,255,255,0.8)', px: 1, borderRadius: 1 }}>{top3[2].user.username}</Typography>
                             <Paper 
                                 elevation={0}
                                 sx={{ 
@@ -151,11 +161,13 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                                     borderTopRightRadius: { xs: 10, sm: 16 },
                                     display: 'flex',
                                     justifyContent: 'center',
-                                    alignItems: 'flex-end',
+                                    alignItems: 'center',
+                                    flexDirection: 'column',
                                     pb: 2
                                 }} 
                             >
-                                <Typography variant="h3" fontWeight={900} color="rgba(0,0,0,0.05)" sx={{ fontSize: { xs: '2.5rem', sm: '3rem' } }}>3</Typography>
+                                <Typography variant="h4" fontWeight={900} color="text.secondary">3</Typography>
+                                <Typography variant="caption" fontWeight="bold">{top3[2].session_score} pts</Typography>
                             </Paper>
                         </>
                     ) : (
@@ -174,9 +186,10 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                         {others.map((p, index) => (
                             <ListItem key={p.user.id} divider sx={{ px: 2 }}>
                                 <ListItemAvatar>
-                                    <Avatar sx={{ width: 32, height: 32, fontSize: '0.9rem', bgcolor: 'transparent', color: 'text.secondary', border: '2px solid #eee' }}>
-                                        {index + 4}
-                                    </Avatar>
+                                    <Box sx={{ width: 40, height: 40, overflow: 'hidden', borderRadius: '50%', border: '1px solid #eee', position: 'relative' }}>
+                                        <Character config={getAvatarConfig(p.user)} size={40} />
+                                        <Box sx={{ position: 'absolute', bottom: 0, right: 0, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', fontSize: 10, px: 0.5, borderRadius: 1 }}>{index + 4}</Box>
+                                    </Box>
                                 </ListItemAvatar>
                                 <ListItemText 
                                     primary={p.user.username} 
@@ -188,7 +201,7 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                     </List>
                 </Paper>
             )}
-            
+
             {isAdmin && onClose && (
                 <Button 
                     variant="contained" 
