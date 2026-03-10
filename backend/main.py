@@ -9,11 +9,15 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+ORIGINS = [
+    "http://localhost:5173",
+    "https://sarawut-hub.github.io",
+    "https://tic-tac-toe-nwbp.onrender.com"
+] # os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGINS + ["*"], # อนุญาตหมดในช่วงแรกเพื่อให้เทสง่าย (Production ควรระบุเจาะจง)
+    allow_origins=ORIGINS, # ระบุเจาะจงแทน * เพื่อรองรับ allow_credentials=True
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
