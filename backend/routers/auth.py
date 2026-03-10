@@ -49,6 +49,11 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 async def get_current_user(request: Request, db: Session = Depends(get_db)):
     token = request.cookies.get("access_token")
     if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+    if not token:
          raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -168,7 +173,12 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
         if "github.io" in redirect_base and not redirect_base.endswith("tic-tac-toe/"):
              redirect_base = "https://sarawut-hub.github.io/tic-tac-toe/"
 
-        response = RedirectResponse(url=redirect_base) 
+        if "?" in redirect_base:
+            redirect_url = f"{redirect_base}&token={token}"
+        else:
+            redirect_url = f"{redirect_base}?token={token}"
+
+        response = RedirectResponse(url=redirect_url) 
         response.set_cookie(
             key="access_token",
             value=token,
@@ -233,7 +243,12 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
         if "github.io" in redirect_base and not redirect_base.endswith("tic-tac-toe/"):
              redirect_base = "https://sarawut-hub.github.io/tic-tac-toe/"
 
-        response = RedirectResponse(url=redirect_base) 
+        if "?" in redirect_base:
+             redirect_url = f"{redirect_base}&token={token}"
+        else:
+             redirect_url = f"{redirect_base}?token={token}"
+
+        response = RedirectResponse(url=redirect_url) 
         response.set_cookie(
             key="access_token",
             value=token,
