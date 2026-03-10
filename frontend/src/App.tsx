@@ -39,11 +39,34 @@ function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('token');
+    const joinCodeParam = params.get('join');
+    const basePath = import.meta.env.BASE_URL || '/';
+
     if (token) {
         localStorage.setItem('access_token', token);
-        window.history.replaceState({}, document.title, "/");
+        // Clean URL but keep base path
+        window.history.replaceState({}, document.title, basePath);
+        
+        // Check for pending join
+        const pendingJoin = localStorage.getItem('pending_join_code');
+        if (pendingJoin) {
+             setJoinCode(pendingJoin);
+             setView('join');
+             localStorage.removeItem('pending_join_code');
+        }
     }
 
+    if (joinCodeParam) {
+        // If logged in, use it immediately
+        // If not logged in (loading true), we'll apply it after user check finishes
+        // Store it just in case we need to login first
+        localStorage.setItem('pending_join_code', joinCodeParam);
+        setJoinCode(joinCodeParam);
+        setView('join');
+        // Clean URL to avoid re-triggering logic on reload if desired, or keep it
+        window.history.replaceState({}, document.title, basePath);
+    }
+    
     // Try fetch user anyway (cookie might exist even if no localStorage token)
     fetchUser().then((u) => {
         if (u) {

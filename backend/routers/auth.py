@@ -159,6 +159,13 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
         # Check if user exists
         user = db.query(models.User).filter(models.User.provider_id == github_id).first()
         if not user:
+            # Check for existing email to prevent unique constraint error
+            if email:
+                existing_email = db.query(models.User).filter(models.User.email == email).first()
+                if existing_email:
+                    # Email exists with different provider; append provider suffix to make unique for now
+                    email = f"{github_id}_{email}"
+            
             user = models.User(provider_id=github_id, username=username, email=email)
             db.add(user)
             db.commit()
@@ -229,6 +236,12 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
              existing_user_by_name = db.query(models.User).filter(models.User.username == username).first()
              if existing_user_by_name:
                  username = f"{username}_{google_id[-4:]}" # Append suffix to make unique
+
+             # Check for existing email to prevent unique constraint error
+             if email:
+                  existing_email = db.query(models.User).filter(models.User.email == email).first()
+                  if existing_email:
+                      email = f"{google_id}_{email}"
 
              user = models.User(provider_id=google_id, username=username, email=email)
              db.add(user)
