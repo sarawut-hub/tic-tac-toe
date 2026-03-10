@@ -3,9 +3,10 @@ services:
   - type: web
     name: tic-tac-toe-backend
     runtime: python
-    region: singapore # Optional: Asia region
-    buildCommand: cd backend && pip install -r requirements.txt
-    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
+    region: singapore
+    rootDir: backend  # <--- เพิ่มบรรทัดนี้: บอกให้ Render เข้าไปทำงานในโฟลเดอร์ backend โดยตรง
+    buildCommand: pip install -r requirements.txt  # ไม่ต้องมี cd backend && แล้ว
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT # ไม่ต้องมี cd backend && แล้ว
     envVars:
       - key: DATABASE_URL
         fromDatabase:
