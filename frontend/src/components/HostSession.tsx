@@ -254,7 +254,10 @@ const HostSession: React.FC = () => {
                         }}
                     >
                         <QRCodeCanvas 
-                            value={`${window.location.origin}/?join=${session.code}`} 
+                            value={window.location.origin.includes('github.io') 
+                                ? `${window.location.origin}/tic-tac-toe/?join=${session.code}`
+                                : `${window.location.origin}/?join=${session.code}`
+                            }
                             size={160} 
                             level="H" 
                             style={{ maxWidth: '100%', height: 'auto' }}
