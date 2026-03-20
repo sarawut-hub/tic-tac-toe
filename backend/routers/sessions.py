@@ -6,7 +6,7 @@ from routers.auth import get_current_user
 import secrets
 from datetime import datetime, timedelta
 from fastapi import WebSocket, WebSocketDisconnect
-from websockets import manager
+from websocket_manager import manager
 import json
 
 router = APIRouter()
@@ -57,7 +57,7 @@ def get_session(code: str, db: Session = Depends(get_db)):
     return session
 
 @router.post("/sessions/{code}/join", response_model=schemas.SessionPlayerResponse)
-def join_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def join_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     session = db.query(models.GameSession).filter(models.GameSession.code == code).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -110,7 +110,7 @@ def get_players(code: str, db: Session = Depends(get_db)):
     return session.players
 
 @router.post("/sessions/{code}/start")
-def start_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def start_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     session = db.query(models.GameSession).filter(models.GameSession.code == code).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -143,7 +143,7 @@ def start_session(code: str, db: Session = Depends(get_db), current_user: schema
     return session
 
 @router.post("/sessions/{code}/end")
-def end_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def end_session(code: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     session = db.query(models.GameSession).filter(models.GameSession.code == code).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -173,7 +173,7 @@ async def websocket_endpoint(websocket: WebSocket, code: str):
         manager.disconnect(websocket, code)
 
 @router.put("/sessions/{code}/avatar", response_model=schemas.SessionPlayerResponse)
-def update_avatar(code: str, avatar: schemas.AvatarUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def update_avatar(code: str, avatar: schemas.AvatarUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     session = db.query(models.GameSession).filter(models.GameSession.code == code).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -190,4 +190,11 @@ def update_avatar(code: str, avatar: schemas.AvatarUpdate, db: Session = Depends
     db.add(player)
     db.commit()
     db.refresh(player)
+    
+    # Notify via WebSocket
+    await manager.broadcast({
+        "type": "AVATAR_UPDATE",
+        "data": {"user_id": current_user.id, "avatar_config": avatar.avatar_config}
+    }, code)
+    
     return player

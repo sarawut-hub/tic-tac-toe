@@ -7,17 +7,13 @@ from .auth import get_current_user, get_db
 import random
 import game_logic
 import time
-from websockets import manager
+from websocket_manager import manager
 
 router = APIRouter()
 
 @router.get("/users/me", response_model=schemas.User)
 def read_users_me(current_user: schemas.User = Depends(get_current_user)):
     return current_user
-
-import random
-import game_logic
-import time
 
 @router.post("/game/move", response_model=schemas.GameResultResponse)
 async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
@@ -209,15 +205,6 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
                         "type": "SCORE_UPDATE",
                         "data": {"user_id": user.id, "score": session_score}
                     }, answer.session_code)
-    
-    db.commit()
-    db.refresh(user)
-    
-    return {
-        "user": user,
-        "session_score": session_score,
-        "question": None
-    }
     
     db.commit()
     db.refresh(user)
