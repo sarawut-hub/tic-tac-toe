@@ -30,11 +30,20 @@ def create_session(session: schemas.SessionCreate, db: Session = Depends(get_db)
     while db.query(models.GameSession).filter(models.GameSession.code == code).first():
         code = generate_code()
         
+    # If question_set_id is provided, fetch questions from that set
+    final_question_ids = session.question_ids or []
+    if session.question_set_id and not final_question_ids:
+        q_set = db.query(models.QuestionSet).filter(models.QuestionSet.id == session.question_set_id).first()
+        if q_set:
+            final_question_ids = [q.id for q in q_set.questions]
+
     new_session = models.GameSession(
         code=code,
+        name=session.name,
         host_id=current_user.id,
         time_limit_minutes=session.time_limit_minutes,
-        question_ids=session.question_ids,
+        question_ids=final_question_ids,
+        question_set_id=session.question_set_id,
         status="WAITING"
     )
     db.add(new_session)
@@ -161,6 +170,12 @@ async def end_session(code: str, db: Session = Depends(get_db), current_user: sc
     }, code)
     
     return {"message": "Session ended"}
+
+@router.get("/sessions/history", response_model=List[schemas.SessionStatusResponse])
+def get_session_history(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    return db.query(models.GameSession).filter(
+        models.GameSession.host_id == current_user.id
+    ).order_by(models.GameSession.created_at.desc()).all()
 
 @router.websocket("/ws/{code}")
 async def websocket_endpoint(websocket: WebSocket, code: str):

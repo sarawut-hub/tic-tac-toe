@@ -127,48 +127,66 @@ const JoinSession: React.FC<JoinSessionProps> = ({ sessionCode, user, onUpdateUs
 
         return (
             <Box textAlign="center" mt={4} display="flex" flexDirection="column" alignItems="center">
-                <Typography variant="h4" gutterBottom fontWeight={900} color="primary">Waiting for Host...</Typography>
+                <Typography variant="h3" gutterBottom fontWeight={900} color="primary" sx={{ textShadow: '0 4px 12px rgba(33, 150, 243, 0.2)' }}>
+                    Ready to Play? 🎮
+                </Typography>
                 
                 <Paper 
                     elevation={0} 
-                    sx={{ p: 1, px: 3, mb: 4, borderRadius: 4, bgcolor: '#E0F7FA', color: '#006064', fontWeight: 'bold' }}
+                    className="glass-card"
+                    sx={{ p: 1, px: 4, mb: 4, borderRadius: 5, color: '#006064', fontWeight: 800, fontSize: '1.2rem' }}
                 >
-                    Session: {sessionCode}
+                    Room Code: {sessionCode}
                 </Paper>
 
                 {avatarConfig && (
-                    <Box mb={4} position="relative">
-                        <Character config={avatarConfig} size={150} />
-                        <Button 
-                            variant="outlined" 
-                            size="small" 
-                            onClick={() => setIsCustomizing(true)}
-                            sx={{ mt: 2, borderRadius: 4, px: 3, bgcolor: 'white' }}
-                        >
-                            Customize Avatar ✏️
-                        </Button>
+                    <Box mb={4} position="relative" sx={{ transition: 'transform 0.3s ease', '&:hover': { transform: 'scale(1.05)' } }}>
+                        <Character config={avatarConfig} size={160} />
+                        <Box mt={2}>
+                            <Button 
+                                variant="contained" 
+                                color="inherit"
+                                onClick={() => setIsCustomizing(true)}
+                                sx={{ 
+                                    borderRadius: 4, 
+                                    px: 4, 
+                                    bgcolor: 'rgba(255,255,255,0.8)', 
+                                    backdropFilter: 'blur(5px)',
+                                    fontWeight: 'bold',
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                }}
+                            >
+                                Edit Character ✏️
+                            </Button>
+                        </Box>
                     </Box>
                 )}
 
-                <Paper sx={{ width: '100%', maxWidth: 400, mt: 1, maxHeight: 300, overflow: 'auto', borderRadius: 4 }} elevation={0}>
-                    <Typography variant="subtitle1" sx={{ p: 2, bgcolor: '#f5f5f5', fontWeight: 'bold' }}>Players Joined ({players.length})</Typography>
-                    <List>
+                <Paper className="glass-card" sx={{ width: '100%', maxWidth: 450, mt: 1, maxHeight: 400, overflow: 'hidden', borderRadius: 5 }} elevation={0}>
+                    <Typography variant="subtitle1" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.03)', fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>
+                        Lobby ({players.length} Players) 👥
+                    </Typography>
+                    <List sx={{ maxHeight: 300, overflow: 'auto' }}>
                         {players.map(p => (
-                             <ListItem key={p.user.id} divider>
+                             <ListItem key={p.user.id} divider sx={{ borderColor: 'rgba(0,0,0,0.05)' }}>
                                 <ListItemText 
                                     primary={p.user.username} 
-                                    secondary={p.user.id === user.id ? "(You)" : ""}
-                                    primaryTypographyProps={{ fontWeight: 600 }}
+                                    secondary={p.user.id === user.id ? "✨ You" : ""}
+                                    primaryTypographyProps={{ fontWeight: 700, fontSize: '1.1rem' }}
+                                    secondaryTypographyProps={{ color: 'primary', fontWeight: 'bold' }}
                                 />
                                 {p.avatar_config && Object.keys(p.avatar_config).length > 0 && (
-                                     <Box sx={{ transform: 'scale(0.4)', transformOrigin: 'right center', mr: -2 }}>
+                                     <Box sx={{ transform: 'scale(0.5)', transformOrigin: 'right center', mr: -1 }}>
                                          <Character config={p.avatar_config} size={60} />
                                      </Box>
-                                )}
+                                 )}
                             </ListItem>
                         ))}
                     </List>
                 </Paper>
+                <Typography variant="caption" sx={{ mt: 3, opacity: 0.7, fontWeight: 500 }}>
+                    The game will start as soon as the host is ready! 🚀
+                </Typography>
             </Box>
         );
     }

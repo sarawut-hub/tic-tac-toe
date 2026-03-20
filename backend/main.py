@@ -1,13 +1,42 @@
 from fastapi import FastAPI
 from database import engine
 import models
-from routers import auth, game, sessions, questions
+from routers import auth, game, sessions, questions, question_sets
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from sqlalchemy.orm import Session
 from database import SessionLocal
 
 models.Base.metadata.create_all(bind=engine)
+
+from sqlalchemy import inspect, text
+def run_migrations():
+    inspector = inspect(engine)
+    db = SessionLocal()
+    try:
+        # Check questions table
+        columns = [c['name'] for c in inspector.get_columns('questions')]
+        if 'image_data' not in columns:
+            db.execute(text("ALTER TABLE questions ADD COLUMN image_data TEXT"))
+            db.commit()
+            print("Added image_data column to questions")
+            
+        # Check game_sessions table
+        columns = [c['name'] for c in inspector.get_columns('game_sessions')]
+        if 'name' not in columns:
+            db.execute(text("ALTER TABLE game_sessions ADD COLUMN name TEXT"))
+            db.commit()
+            print("Added name column to game_sessions")
+        if 'question_set_id' not in columns:
+            db.execute(text("ALTER TABLE game_sessions ADD COLUMN question_set_id INTEGER"))
+            db.commit()
+            print("Added question_set_id column to game_sessions")
+    except Exception as e:
+        print(f"Migration info: {e}")
+    finally:
+        db.close()
+
+run_migrations()
 
 def seed_questions():
     db = SessionLocal()
@@ -70,6 +99,7 @@ app.include_router(auth.router, prefix="/auth")
 app.include_router(game.router, prefix="/api")
 app.include_router(sessions.router, prefix="/api")
 app.include_router(questions.router, prefix="/api")
+app.include_router(question_sets.router, prefix="/api")
 
 @app.get("/")
 def read_root():

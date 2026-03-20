@@ -29,36 +29,56 @@ const Leaderboard: React.FC<{ user: any, refreshKey?: number, onReset?: () => vo
     }
 
     return (
-        <Box sx={{ mt: 4, width: '100%', maxWidth: 600 }}>
-            <Typography variant="h5" component="h2" gutterBottom align="center">
-                Leaderboard
+        <Box sx={{ mt: 4, width: '100%', maxWidth: 650, mx: 'auto' }}>
+            <Typography variant="h4" component="h2" gutterBottom align="center" fontWeight={900} color="primary" sx={{ mb: 4, letterSpacing: -0.5 }}>
+                Hall of Fame 🏆
             </Typography>
-            <TableContainer component={Paper}>
+            <TableContainer component={Paper} className="glass-card" sx={{ borderRadius: 5, overflow: 'hidden' }} elevation={0}>
                 <Table aria-label="leaderboard table">
                     <TableHead>
-                        <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Rank</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>User</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Score</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold' }}>Streak</TableCell>
+                        <TableRow sx={{ bgcolor: 'rgba(0,0,0,0.03)' }}>
+                            <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>Rank</TableCell>
+                            <TableCell align="left" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>Player</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>Score</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>Streak</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {users.map((u, idx) => (
-                            <TableRow key={u.id}>
-                                <TableCell align="center">{idx + 1}</TableCell>
-                                <TableCell align="center">{u.username}</TableCell>
-                                <TableCell align="center">{u.score}</TableCell>
-                                <TableCell align="center">{u.current_streak}</TableCell>
-                            </TableRow>
-                        ))}
+                        {users.map((u, idx) => {
+                            const isTop3 = idx < 3;
+                            const badge = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : null;
+                            return (
+                                <TableRow key={u.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                                    <TableCell align="center">
+                                        {badge ? (
+                                            <Typography variant="h5" component="span">{badge}</Typography>
+                                        ) : (
+                                            <Typography variant="body1" fontWeight={700} color="text.secondary">{idx + 1}</Typography>
+                                        )}
+                                    </TableCell>
+                                    <TableCell align="left">
+                                        <Typography variant="body1" fontWeight={isTop3 ? 800 : 700} color={isTop3 ? "primary" : "text.primary"}>
+                                            {u.username}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Typography variant="body1" fontWeight={800} color="secondary">{u.score}</Typography>
+                                    </TableCell>
+                                    <TableCell align="center">
+                                        <Typography variant="body1" fontWeight={700} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                                            {u.current_streak} {u.current_streak >= 3 ? "🔥" : "✨"}
+                                        </Typography>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
                     </TableBody>
                 </Table>
             </TableContainer>
             {user && user.is_admin && (
-                <Box mt={2} display="flex" justifyContent="center">
-                    <Button variant="contained" color="secondary" onClick={handleReset}>
-                        Reset Leaderboard
+                <Box mt={4} display="flex" justifyContent="center">
+                    <Button variant="text" color="error" onClick={handleReset} sx={{ fontWeight: 700, borderRadius: 2 }}>
+                        Clear All Stats 🛑
                     </Button>
                 </Box>
             )}

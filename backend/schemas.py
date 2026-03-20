@@ -33,7 +33,8 @@ class EmployeeLogin(BaseModel):
 
 class QuestionCreate(BaseModel):
     question_text: str
-    options: List[str]
+    image_data: Optional[str] = None
+    options: List[Any]
     correct_answer_index: int
 
 class Question(QuestionCreate):
@@ -42,17 +43,35 @@ class Question(QuestionCreate):
     class Config:
         orm_mode = True
 
+class QuestionSetBase(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+class QuestionSetCreate(QuestionSetBase):
+    question_ids: Optional[List[int]] = []
+
+class QuestionSet(QuestionSetBase):
+    id: int
+    questions: List[Question] = []
+    
+    class Config:
+        orm_mode = True
+
 class SessionCreate(BaseModel):
+    name: Optional[str] = None
     time_limit_minutes: Optional[int] = None
     question_ids: Optional[List[int]] = []
+    question_set_id: Optional[int] = None
 
 class SessionStatusResponse(BaseModel):
     id: int
     code: str
+    name: Optional[str] = None
     status: str
     host_id: int
     time_limit_minutes: Optional[int] = None
     question_ids: Optional[List[int]] = []
+    question_set_id: Optional[int] = None
     
     class Config:
         orm_mode = True

@@ -15,20 +15,41 @@ import {
     Chip
 } from '@mui/material';
 import { QRCodeCanvas } from 'qrcode.react';
-import { createSession, getSession, getSessionPlayers, startSession, endSession, fetchQuestions, getWebSocket } from '../api';
+import { 
+    fetchQuestions, fetchQuestionSets, createSession, getSession, getSessionPlayers, 
+    startSession, endSession, getWebSocket, getSessionHistory 
+} from '../api';
 import Podium from './Podium';
 
 const HostSession: React.FC = () => {
     const [timeLimit, setTimeLimit] = useState(5);
     const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
     const [allQuestions, setAllQuestions] = useState<any[]>([]);
+    const [questionSets, setQuestionSets] = useState<any[]>([]);
+    const [selectedSet, setSelectedSet] = useState<number | ''>('');
     const [session, setSession] = useState<any>(null);
     const [players, setPlayers] = useState<any[]>([]);
+    const [sessionName, setSessionName] = useState('');
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [showPodium, setShowPodium] = useState(false);
+    const [history, setHistory] = useState<any[]>([]);
+    const [showHistory, setShowHistory] = useState(false);
 
     useEffect(() => {
-        fetchQuestions().then(setAllQuestions);
+        const load = async () => {
+            try {
+                const [qData, sData] = await Promise.all([
+                    fetchQuestions(),
+                    fetchQuestionSets()
+                ]);
+                setAllQuestions(qData);
+                setQuestionSets(sData);
+            } catch (e) {
+                console.error("Failed to load hosting data", e);
+            }
+        };
+        load();
+
         const savedCode = localStorage.getItem('host_session_code');
         if (savedCode) {
             getSession(savedCode).then(data => {
@@ -107,8 +128,10 @@ const HostSession: React.FC = () => {
     const handleCreate = async () => {
         try {
             const newSession = await createSession({
+                name: sessionName,
                 time_limit_minutes: timeLimit,
-                question_ids: selectedQuestions
+                question_ids: selectedSet ? [] : selectedQuestions,
+                question_set_id: selectedSet || undefined
             });
             setSession(newSession);
             localStorage.setItem('host_session_code', newSession.code);
@@ -148,10 +171,19 @@ const HostSession: React.FC = () => {
     if (!session) {
         return (
             <Box sx={{ maxWidth: { xs: '100%', sm: 500 }, mx: 'auto', mt: { xs: 2, sm: 4 }, px: { xs: 2, sm: 0 } }}>
-                <Paper sx={{ p: { xs: 3, sm: 4 }, borderRadius: 4, bgcolor: '#FFFFFF' }} elevation={0}>
-                  <Typography variant="h5" gutterBottom textAlign="center" fontWeight={800} color="primary" sx={{ fontSize: { xs: '1.5rem', sm: '1.8rem' } }}>
-                      🎮 Host Private Game
+                <Paper className="glass-card" sx={{ p: { xs: 3, sm: 5 }, borderRadius: 6 }} elevation={0}>
+                  <Typography variant="h4" gutterBottom textAlign="center" fontWeight={900} color="primary" sx={{ mb: 4, letterSpacing: -0.5 }}>
+                      Host Private Game 🎮
                   </Typography>
+                   <TextField 
+                      label="Session Name (for Report)" 
+                      placeholder="e.g., Monthly Team Quiz"
+                      value={sessionName} 
+                      onChange={(e) => setSessionName(e.target.value)} 
+                      fullWidth 
+                      margin="normal" 
+                      InputProps={{ sx: { borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' } }}
+                  />
                   <TextField 
                       label="Time Limit (Minutes)" 
                       type="number" 
@@ -159,38 +191,72 @@ const HostSession: React.FC = () => {
                       onChange={(e) => setTimeLimit(parseInt(e.target.value))} 
                       fullWidth 
                       margin="normal" 
-                      InputProps={{ sx: { borderRadius: 3 } }}
+                      InputProps={{ sx: { borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' } }}
                   />
                   
                   <FormControl fullWidth margin="normal">
-                      <InputLabel>Select Questions (Optional)</InputLabel>
+                      <InputLabel>Select Category (Question Set)</InputLabel>
                       <Select
-                          multiple
-                          value={selectedQuestions}
-                          onChange={(e) => setSelectedQuestions(e.target.value as number[])}
-                          sx={{ borderRadius: 3 }}
-                          renderValue={(selected) => (
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                  {selected.map((value) => (
-                                      <Chip key={value} label={`Q${value}`} sx={{ borderRadius: 2 }} />
-                                  ))}
-                              </Box>
-                          )}
+                          value={selectedSet}
+                          onChange={(e) => {
+                                const val = e.target.value;
+                                setSelectedSet(val as number);
+                                if (val) {
+                                    // Optionally clear specific questions or pre-select them
+                                    setSelectedQuestions([]); 
+                                }
+                          }}
+                          sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' }}
+                          label="Select Category (Question Set)"
                       >
-                          {allQuestions.map((q) => (
-                              <MenuItem key={q.id} value={q.id}>
-                                  {q.question_text.substring(0, 30)}...
+                          <MenuItem value=""><em>None - Select Manual Questions</em></MenuItem>
+                          {questionSets.map((set) => (
+                              <MenuItem key={set.id} value={set.id}>
+                                  {set.name} ({set.questions.length} Questions)
                               </MenuItem>
                           ))}
                       </Select>
                   </FormControl>
+
+                  {!selectedSet && (
+                    <FormControl fullWidth margin="normal">
+                        <InputLabel>Select Questions (Manual)</InputLabel>
+                        <Select
+                            multiple
+                            value={selectedQuestions}
+                            onChange={(e) => setSelectedQuestions(e.target.value as number[])}
+                            sx={{ borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' }}
+                            renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => (
+                                        <Chip key={value} label={`Q${value}`} size="small" sx={{ borderRadius: 2, fontWeight: 'bold' }} />
+                                    ))}
+                                </Box>
+                            )}
+                        >
+                            {allQuestions.map((q) => (
+                                <MenuItem key={q.id} value={q.id}>
+                                    {q.question_text.substring(0, 40)}...
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                  )}
 
                   <Button 
                       variant="contained" 
                       color="primary" 
                       onClick={handleCreate} 
                       fullWidth 
-                      sx={{ mt: 3, py: 1.5, fontSize: '1.1rem' }}
+                      sx={{ 
+                          mt: 4, 
+                          py: 2, 
+                          fontSize: '1.2rem', 
+                          fontWeight: 800, 
+                          borderRadius: 4,
+                          boxShadow: '0 8px 20px rgba(33, 150, 243, 0.3)',
+                          textTransform: 'none'
+                      }}
                   >
                       Create Session ✨
                   </Button>
@@ -212,29 +278,33 @@ const HostSession: React.FC = () => {
         >
             <Paper 
                 elevation={0} 
+                className="glass-card"
                 sx={{ 
                     display: 'inline-flex', 
                     flexDirection: 'column',
                     alignItems: 'center',
-                    p: { xs: 3, sm: 5 }, 
-                    borderRadius: 6, 
+                    p: { xs: 4, sm: 6 }, 
+                    borderRadius: 8, 
                     mb: 4, 
                     maxWidth: '100%',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    border: '1px solid rgba(255,255,255,0.4)',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.1)'
                 }}
             >
-                <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1.2rem' }, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
-                    Use Code to Join
+                <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '0.9rem', sm: '1.2rem' }, mb: 1, textTransform: 'uppercase', letterSpacing: 2, fontWeight: 700 }}>
+                    Join with Code
                 </Typography>
                 <Typography 
                     variant="h2" 
                     color="primary" 
                     sx={{ 
-                        letterSpacing: { xs: 2, sm: 6 }, 
+                        letterSpacing: { xs: 4, sm: 10 }, 
                         fontWeight: 900,
-                        fontSize: { xs: '2.5rem', sm: '4rem' },
+                        fontSize: { xs: '3rem', sm: '5rem' },
                         lineHeight: 1,
-                        wordBreak: 'break-all'
+                        wordBreak: 'break-all',
+                        textShadow: '0 4px 20px rgba(33, 150, 243, 0.2)'
                     }}
                 >
                     {session.code}
@@ -259,11 +329,13 @@ const HostSession: React.FC = () => {
                 <Box my={4} display="flex" flexDirection="column" alignItems="center">
                     <Paper 
                         elevation={0} 
+                        className="glass-card"
                         sx={{ 
-                            p: 2, 
-                            borderRadius: 4, 
-                            bgcolor: '#fff',
-                            border: '1px solid #eee'
+                            p: 3, 
+                            borderRadius: 5, 
+                            border: '1px solid rgba(255,255,255,0.5)',
+                            transition: 'transform 0.3s ease',
+                            '&:hover': { transform: 'scale(1.02)' }
                         }}
                     >
                         <QRCodeCanvas 
@@ -271,12 +343,12 @@ const HostSession: React.FC = () => {
                                 ? `${window.location.origin}/tic-tac-toe/?join=${session.code}`
                                 : `${window.location.origin}/?join=${session.code}`
                             }
-                            size={160} 
+                            size={180} 
                             level="H" 
-                            style={{ maxWidth: '100%', height: 'auto' }}
+                            style={{ maxWidth: '100%', height: 'auto', borderRadius: 8 }}
                         />
                     </Paper>
-                    <Typography mt={2} variant="body2" color="text.secondary">Scan QR to Join</Typography>
+                    <Typography mt={2} variant="body2" color="text.secondary" fontWeight={600}>Scan QR to Join Instantly 📱</Typography>
                 </Box>
             )}
 
@@ -286,21 +358,23 @@ const HostSession: React.FC = () => {
                 </Typography>
                 
                 <Paper 
+                    className="glass-card"
                     elevation={0}
                     sx={{ 
-                        bgcolor: 'rgba(255,255,255,0.6)', 
-                        backdropFilter: 'blur(10px)',
-                        borderRadius: 4,
-                        border: '1px solid rgba(0,0,0,0.05)',
+                        borderRadius: 5,
+                        border: '1px solid rgba(255,255,255,0.4)',
                         overflow: 'hidden',
-                        height: 300,
+                        height: 350,
                         display: 'flex',
                         flexDirection: 'column'
                     }}
                 >
+                    <Typography variant="subtitle1" sx={{ p: 2, bgcolor: 'rgba(0,0,0,0.03)', fontWeight: 800, textAlign: 'center', letterSpacing: 1 }}>
+                        LOBBY ({players.length} Players)
+                    </Typography>
                     {players.length === 0 ? (
                         <Box display="flex" alignItems="center" justifyContent="center" height="100%">
-                             <Typography color="text.secondary" fontStyle="italic">Waiting for players...</Typography>
+                             <Typography color="text.secondary" fontStyle="italic" fontWeight={500}>Waiting for participants... ⏳</Typography>
                         </Box>
                     ) : (
                         <List sx={{ overflow: 'auto', py: 0 }}>
@@ -308,16 +382,16 @@ const HostSession: React.FC = () => {
                                 <ListItem 
                                     key={p.user.id} 
                                     divider={index !== players.length - 1}
-                                    sx={{ px: 3, py: 1.5 }}
+                                    sx={{ px: 4, py: 2, borderColor: 'rgba(0,0,0,0.05)' }}
                                 >
                                     <ListItemText 
                                         primary={
-                                            <Typography fontWeight="bold" color="text.primary">
+                                            <Typography fontWeight={700} color="text.primary" fontSize="1.1rem">
                                                 {p.user.username}
                                             </Typography>
                                         }
                                     />
-                                    <Chip label={`${p.session_score} pts`} size="small" color="primary" variant="outlined" />
+                                    <Chip label={`${p.session_score} pts`} size="small" color="primary" sx={{ fontWeight: 800, borderRadius: 2 }} />
                                 </ListItem>
                             ))}
                         </List>
@@ -360,6 +434,54 @@ const HostSession: React.FC = () => {
                     >
                         END GAME 🛑
                     </Button>
+                )}
+            </Box>
+
+            <Box mt={8} mb={6} sx={{ width: '100%', maxWidth: 600, mx: 'auto' }}>
+                <Button 
+                    variant="text" 
+                    onClick={async () => {
+                        const data = await getSessionHistory();
+                        setHistory(data);
+                        setShowHistory(!showHistory);
+                    }}
+                    sx={{ mb: 2 }}
+                >
+                    {showHistory ? "Hide History 🕒" : "Show Recent Sessions 🕒"}
+                </Button>
+
+                {showHistory && (
+                    <Paper elevation={0} sx={{ p: 3, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' }}>
+                        <Typography variant="h6" mb={2} fontWeight={700}>Session Reports</Typography>
+                        {history.length === 0 ? (
+                            <Typography color="text.secondary">No past sessions found.</Typography>
+                        ) : (
+                            <List>
+                                {history.map((h) => (
+                                    <ListItem 
+                                        key={h.id} 
+                                        sx={{ 
+                                            bgcolor: 'white', 
+                                            mb: 1, 
+                                            borderRadius: 2,
+                                            border: '1px solid #eee' 
+                                        }}
+                                    >
+                                        <ListItemText 
+                                            primary={h.name || `Session ${h.code}`} 
+                                            secondary={`Status: ${h.status} | Code: ${h.code}`} 
+                                        />
+                                        <Button size="small" variant="contained" onClick={() => {
+                                            setSession(h);
+                                            setShowHistory(false);
+                                        }}>
+                                            View Report
+                                        </Button>
+                                    </ListItem>
+                                ))}
+                            </List>
+                        )}
+                    </Paper>
                 )}
             </Box>
         </Box>

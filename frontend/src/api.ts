@@ -111,8 +111,13 @@ export const fetchQuestions = async () => {
     return response.data;
 };
 
-export const createQuestion = async (question: { question_text: string, options: string[], correct_answer_index: number }) => {
+export const createQuestion = async (question: { question_text: string, image_data?: string, options: any[], correct_answer_index: number }) => {
     const response = await api.post('/api/questions/', question);
+    return response.data;
+};
+
+export const updateQuestion = async (id: number, question: { question_text: string, image_data?: string, options: any[], correct_answer_index: number }) => {
+    const response = await api.put(`/api/questions/${id}`, question);
     return response.data;
 };
 
@@ -121,9 +126,35 @@ export const deleteQuestion = async (id: number) => {
     return response.data;
 };
 
+// Question Set Management
+export const fetchQuestionSets = async () => {
+    const response = await api.get('/api/question-sets/');
+    return response.data;
+};
+
+export const createQuestionSet = async (questionSet: { name: string, description?: string, question_ids: number[] }) => {
+    const response = await api.post('/api/question-sets/', questionSet);
+    return response.data;
+};
+
+export const updateQuestionSet = async (id: number, questionSet: { name: string, description?: string, question_ids: number[] }) => {
+    const response = await api.put(`/api/question-sets/${id}`, questionSet);
+    return response.data;
+};
+
+export const deleteQuestionSet = async (id: number) => {
+    const response = await api.delete(`/api/question-sets/${id}`);
+    return response.data;
+};
+
 // Session Management
-export const createSession = async (sessionData: { time_limit_minutes: number, question_ids: number[] }) => {
+export const createSession = async (sessionData: { name?: string, time_limit_minutes: number, question_ids?: number[], question_set_id?: number }) => {
     const response = await api.post('/api/sessions', sessionData);
+    return response.data;
+};
+
+export const getSessionHistory = async () => {
+    const response = await api.get('/api/sessions/history');
     return response.data;
 };
 

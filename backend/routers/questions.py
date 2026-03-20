@@ -11,7 +11,12 @@ router = APIRouter()
 def create_question(question: schemas.QuestionCreate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized")
-    db_question = models.Question(question_text=question.question_text, options=question.options, correct_answer_index=question.correct_answer_index)
+    db_question = models.Question(
+        question_text=question.question_text, 
+        image_data=question.image_data,
+        options=question.options, 
+        correct_answer_index=question.correct_answer_index
+    )
     db.add(db_question)
     db.commit()
     db.refresh(db_question)
@@ -34,6 +39,7 @@ def update_question(question_id: int, question: schemas.QuestionCreate, db: Sess
          raise HTTPException(status_code=404, detail="Question not found")
     
     db_question.question_text = question.question_text
+    db_question.image_data = question.image_data
     db_question.options = question.options
     db_question.correct_answer_index = question.correct_answer_index
     

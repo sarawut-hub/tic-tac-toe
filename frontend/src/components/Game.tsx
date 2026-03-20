@@ -60,7 +60,7 @@ const Game: React.FC<{
     return Date.now();
   });
 
-  const [quizQuestion, setQuizQuestion] = useState<{id: number, question: string, options: string[]} | null>(null);
+  const [quizQuestion, setQuizQuestion] = useState<{id: number, question: string, options: string[], image_data?: string} | null>(null);
   
   const [loading, setLoading] = useState(false);
 
@@ -155,8 +155,8 @@ const Game: React.FC<{
   };
 
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
-      <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: '#fff', border: '2px dashed #eee' }}>
+    <Box display="flex" flexDirection="column" alignItems="center" gap={3} sx={{ perspective: '1000px' }}>
+      <Paper elevation={0} className="glass-card" sx={{ p: 2, borderRadius: 3, border: '1px solid rgba(255,255,255,0.3)' }}>
           <Typography variant="h5" color="primary" sx={{ fontWeight: 800 }}>
             {winner ? (winner === 'Draw' ? "🤝 It's a Draw!" : `🎉 Winner: ${winner === 'X' ? 'You' : 'Bot'}!`) : (isXNext ? "👉 Your Turn (X)" : "🤖 Bot Thinking...")}
           </Typography>
@@ -169,9 +169,12 @@ const Game: React.FC<{
           gridTemplateColumns: 'repeat(3, 1fr)', 
           gap: 1.5,
           p: 2,
-          bgcolor: '#37474f', // Darker to contrast
+          bgcolor: 'rgba(55, 71, 79, 0.8)', // Semi-transparent dark
+          backdropFilter: 'blur(10px)',
           borderRadius: 4,
-          boxShadow: '0 8px 16px rgba(0,0,0,0.1)' 
+          boxShadow: '0 12px 40px rgba(0,0,0,0.15)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          transition: 'all 0.3s ease'
       }}>
         {board.map((val, idx) => (
           <Square key={idx} value={val} onClick={() => handleClick(idx)} />
@@ -189,7 +192,10 @@ const Game: React.FC<{
               animation: `${bounce} 1s infinite`,
               bgcolor: '#4ECDC4',
               color: 'white',
-              fontSize: '1.2rem'
+              fontSize: '1.2rem',
+              borderRadius: 3,
+              px: 4,
+              boxShadow: '0 8px 16px rgba(78, 205, 196, 0.4)'
           }}
         >
           Play Again 🔄
@@ -210,13 +216,14 @@ const Game: React.FC<{
         >
             {showCheer && (
                 <Paper 
-                    elevation={4} 
+                    elevation={0} 
+                    className="glass-card"
                     sx={{ 
                         p: 1, 
                         px: 2, 
                         mb: 1, 
                         borderRadius: 4, 
-                        bgcolor: '#FF6B6B', 
+                        bgcolor: 'rgba(255, 107, 107, 0.9) !important', 
                         color: 'white', 
                         fontWeight: 'bold',
                         animation: `${bounce} 0.5s infinite`
@@ -229,28 +236,25 @@ const Game: React.FC<{
         </Box>
       )}
 
-      <Paper elevation={0} sx={{ 
+      <Paper elevation={0} className="glass-card" sx={{ 
           width: '100%', 
           maxWidth: 400, 
           p: 3, 
-          pt: 4, // More padding top for character overlap 
+          pt: 4, 
           textAlign: 'center', 
-          bgcolor: '#ffffff',
           borderRadius: 4,
-          border: '1px solid #f0f0f0',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
         }}>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2 }}>
-              <Box>
-                 <Typography variant="subtitle2" color="text.secondary" textTransform="uppercase" letterSpacing={1}>Score</Typography>
-                 <Typography variant="h4" color="primary">
+              <Box sx={{ p: 2, bgcolor: 'rgba(33, 150, 243, 0.05)', borderRadius: 3 }}>
+                 <Typography variant="subtitle2" color="text.secondary" textTransform="uppercase" fontWeight={700} letterSpacing={1}>Score</Typography>
+                 <Typography variant="h4" color="primary" fontWeight={900}>
                     {sessionCode && sessionScore !== undefined ? sessionScore : user.score}
                  </Typography>
               </Box>
-              <Box>
-                 <Typography variant="subtitle2" color="text.secondary" textTransform="uppercase" letterSpacing={1}>Streak</Typography>
-                 <Typography variant="h4" color="secondary">
-                     {user.current_streak} 🔥
+              <Box sx={{ p: 2, bgcolor: 'rgba(233, 30, 99, 0.05)', borderRadius: 3 }}>
+                 <Typography variant="subtitle2" color="text.secondary" textTransform="uppercase" fontWeight={700} letterSpacing={1}>Streak</Typography>
+                 <Typography variant="h4" color="secondary" fontWeight={900} className={user.current_streak >= 3 ? "fire-effect" : ""}>
+                     {user.current_streak} {user.current_streak >= 3 ? "🔥" : "✨"}
                  </Typography>
               </Box>
               <Box sx={{ gridColumn: '1 / -1' }}>
@@ -258,7 +262,7 @@ const Game: React.FC<{
                     label={`Bot Difficulty: Level ${user.bot_difficulty || 1}`} 
                     color="primary" 
                     variant="outlined" 
-                    sx={{ mt: 1, fontWeight: 'bold' }} 
+                    sx={{ mt: 1, fontWeight: 'bold', borderRadius: 2 }} 
                 />
               </Box>
           </Box>
@@ -270,53 +274,88 @@ const Game: React.FC<{
         maxWidth="sm" 
         fullWidth
         PaperProps={{
-            sx: { borderRadius: 4, p: 2 }
+            className: "glass-card",
+            sx: { borderRadius: 6, p: 0, overflow: 'hidden' }
         }}
       >
-        <DialogTitle sx={{ textAlign: 'center', color: '#FF6B6B', fontWeight: 900, fontSize: '1.5rem' }}>
+        <Box sx={{ height: 6, bgcolor: '#FF6B6B', animation: 'progress-shrink 15s linear forwards' }} />
+        <DialogTitle sx={{ textAlign: 'center', color: '#FF6B6B', fontWeight: 900, fontSize: '1.8rem', pt: 4 }}>
             🎁 Bonus Question! 🎁
         </DialogTitle>
-        <DialogContent>
-            <Typography variant="h6" gutterBottom textAlign="center" sx={{ mb: 3, fontWeight: 700 }}>
+        <DialogContent sx={{ p: 4 }}>
+            {quizQuestion?.image_data && (
+                <Box sx={{ mb: 3, textAlign: 'center' }}>
+                    <img 
+                        src={quizQuestion.image_data} 
+                        alt="Question" 
+                        style={{ maxWidth: '100%', maxHeight: 250, borderRadius: 20, boxShadow: '0 8px 20px rgba(0,0,0,0.1)' }} 
+                    />
+                </Box>
+            )}
+            <Typography variant="h5" gutterBottom textAlign="center" sx={{ mb: 4, fontWeight: 800, color: '#333' }}>
                 {quizQuestion?.question}
             </Typography>
          
-            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {quizQuestion?.options.map((opt: string, idx: number) => (
-                    <Button 
-                        key={idx}
-                        variant="outlined" 
-                        fullWidth 
-                        onClick={() => handleQuizAnswer(idx)}
-                        sx={{ 
-                            justifyContent: 'flex-start', 
-                            textAlign: 'left',
-                            borderRadius: 3,
-                            py: 1.5,
-                            borderWidth: 2,
-                            '&:hover': { borderWidth: 2, bgcolor: '#F7FFF7' }
-                        }}
-                    >
-                        <Box component="span" sx={{ 
-                            width: 28, 
-                            height: 28, 
-                            borderRadius: '50%', 
-                            bgcolor: '#eee', 
-                            display: 'inline-flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            mr: 2,
-                            color: '#555',
-                            fontWeight: 'bold'
-                        }}>
-                            {String.fromCharCode(65 + idx)}
-                        </Box>
-                        {opt}
-                    </Button>
-                ))}
+            <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: (quizQuestion?.options.some((opt: any) => typeof opt !== 'string' && opt.image_data)) ? 'repeat(2, 1fr)' : '1fr', 
+                gap: 2 
+            }}>
+                {quizQuestion?.options.map((opt: any, idx: number) => {
+                    const isObject = typeof opt !== 'string';
+                    const text = isObject ? opt.text : opt;
+                    const img = isObject ? opt.image_data : null;
+
+                    return (
+                        <Button 
+                            key={idx}
+                            variant="outlined" 
+                            fullWidth 
+                            onClick={() => handleQuizAnswer(idx)}
+                            sx={{ 
+                                display: 'flex',
+                                flexDirection: img ? 'column' : 'row',
+                                alignItems: img ? 'center' : 'center',
+                                justifyContent: img ? 'center' : 'flex-start',
+                                textAlign: img ? 'center' : 'left',
+                                borderRadius: 4,
+                                p: img ? 2 : 1.5,
+                                borderWidth: 2,
+                                borderColor: 'rgba(0,0,0,0.08)',
+                                transition: 'all 0.2s',
+                                '&:hover': { borderWidth: 2, bgcolor: 'rgba(78, 205, 196, 0.1)', borderColor: '#4ECDC4', transform: 'translateY(-2px)' }
+                            }}
+                        >
+                            {!img && (
+                                <Box component="span" sx={{ 
+                                    width: 32, 
+                                    height: 32, 
+                                    borderRadius: '50%', 
+                                    bgcolor: 'rgba(0,0,0,0.05)', 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    mr: 2,
+                                    color: '#777',
+                                    fontWeight: 800
+                                }}>
+                                    {String.fromCharCode(65 + idx)}
+                                </Box>
+                            )}
+                            {img && (
+                                <Box sx={{ mb: 1.5 }}>
+                                    <img src={img} alt="" style={{ width: 100, height: 100, borderRadius: 12, objectFit: 'cover' }} />
+                                </Box>
+                            )}
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                                {text}
+                            </Typography>
+                        </Button>
+                    );
+                })}
             </Box>
-             <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 3, color: '#aaa' }}>
-                Correct (+100) | Incorrect (-1)
+             <Typography variant="caption" display="block" textAlign="center" sx={{ mt: 4, color: '#999', fontStyle: 'italic' }}>
+                💡 Be quick! Response time counts towards your bonus score.
             </Typography>
         </DialogContent>
       </Dialog>

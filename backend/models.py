@@ -1,7 +1,15 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, Table
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
+
+# Junction table for QuestionSet and Question
+question_set_questions = Table(
+    "question_set_questions",
+    Base.metadata,
+    Column("question_set_id", Integer, ForeignKey("question_sets.id"), primary_key=True),
+    Column("question_id", Integer, ForeignKey("questions.id"), primary_key=True),
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -22,12 +30,14 @@ class GameSession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     code = Column(String, unique=True, index=True)
+    name = Column(String, nullable=True) # Session name for reporting
     host_id = Column(Integer, ForeignKey("users.id"))
     
     status = Column(String, default="WAITING") # WAITING, ACTIVE, ENDED
     
     time_limit_minutes = Column(Integer, nullable=True)
     question_ids = Column(JSON, nullable=True)
+    question_set_id = Column(Integer, ForeignKey("question_sets.id"), nullable=True)
     
     start_time = Column(DateTime, nullable=True)
     end_time = Column(DateTime, nullable=True)
@@ -55,5 +65,18 @@ class Question(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     question_text = Column(String)
-    options = Column(JSON) # List of strings [ "A", "B", "C", "D" ]
+    image_data = Column(String, nullable=True) # Base64 or URL
+    options = Column(JSON) # List of strings or objects {text, image_data}
     correct_answer_index = Column(Integer)
+    
+    question_sets = relationship("QuestionSet", secondary=question_set_questions, back_populates="questions")
+
+class QuestionSet(Base):
+    __tablename__ = "question_sets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    description = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    questions = relationship("Question", secondary=question_set_questions, back_populates="question_sets")

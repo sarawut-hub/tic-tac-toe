@@ -5,6 +5,7 @@ import Leaderboard from './components/Leaderboard';
 import HostSession from './components/HostSession';
 import JoinSession from './components/JoinSession';
 import QuestionManager from './components/QuestionManager';
+import QuestionSetManager from './components/QuestionSetManager';
 import { 
   Container, 
   CssBaseline, 
@@ -25,7 +26,12 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 const theme = createTheme({
     palette: {
         mode: 'light',
+        primary: { main: '#2196F3' },
+        secondary: { main: '#4ECDC4' },
     },
+    typography: {
+        fontFamily: "'Inter', sans-serif",
+    }
 });
 
 function App() {
@@ -130,11 +136,14 @@ function App() {
                 </Typography>
                 
                 {!user ? (
-                    <Paper elevation={3} sx={{ p: 4, textAlign: 'center', mt: 4 }}>
-                        <Typography variant="body1" paragraph>
-                            Please login to play and save your score.
+                    <Paper className="glass-card" sx={{ p: { xs: 4, sm: 6 }, textAlign: 'center', mt: 4, borderRadius: 6 }}>
+                        <Typography variant="h5" fontWeight={800} gutterBottom sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 1 }}>
+                            Welcome 👋
                         </Typography>
-                        <Stack spacing={2} direction="column" alignItems="center" mt={2}>
+                        <Typography variant="body1" paragraph color="text.secondary" sx={{ mb: 4 }}>
+                            Login to join the ultimate Tic-Tac-Toe challenge.
+                        </Typography>
+                        <Stack spacing={3} direction="column" alignItems="center" mt={2} width="100%">
                             <Button
                                 variant="contained"
                                 startIcon={<GitHubIcon />}
@@ -143,35 +152,50 @@ function App() {
                                     backgroundColor: '#24292e', 
                                     '&:hover': { backgroundColor: '#1a1f24' },
                                     width: '100%',
-                                    maxWidth: 300
+                                    maxWidth: 320,
+                                    py: 1.5,
+                                    borderRadius: 4,
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    textTransform: 'none'
                                 }}
                             >
-                                Login with GitHub
+                                Continue with GitHub
                             </Button>
                             <Button
                                 variant="contained"
                                 startIcon={<GoogleIcon />}
                                 onClick={loginWithGoogle}
                                 sx={{ 
-                                    backgroundColor: '#db4437', 
-                                    '&:hover': { backgroundColor: '#c53929' },
+                                    backgroundColor: '#ffffff', 
+                                    color: '#757575',
+                                    border: '1px solid #ddd',
+                                    '&:hover': { backgroundColor: '#f5f5f5' },
                                     width: '100%',
-                                    maxWidth: 300
+                                    maxWidth: 320,
+                                    py: 1.5,
+                                    borderRadius: 4,
+                                    fontWeight: 700,
+                                    fontSize: '1rem',
+                                    textTransform: 'none'
                                 }}
                             >
-                                Login with Google
+                                Continue with Google
                             </Button>
 
-                            <Divider flexItem sx={{ my: 2 }}>OR</Divider>
+                            <Divider flexItem sx={{ my: 2, '&::before, &::after': { borderColor: 'rgba(0,0,0,0.08)' } }}>
+                                <Typography variant="caption" sx={{ color: '#aaa', fontWeight: 600 }}>OR USE ID</Typography>
+                            </Divider>
 
-                            <Box component="form" onSubmit={(e: any) => { e.preventDefault(); handleEmployeeLogin(); }} width="100%" maxWidth={300}>
+                            <Box component="form" onSubmit={(e: any) => { e.preventDefault(); handleEmployeeLogin(); }} width="100%" maxWidth={320}>
                                 <TextField 
-                                    label="Employee ID (รหัสพนักงาน)"
+                                    label="Employee ID / Player ID"
                                     variant="outlined"
                                     fullWidth
                                     value={employeeId} 
                                     onChange={(e) => setEmployeeId(e.target.value)} 
-                                    sx={{ mb: 1 }}
+                                    sx={{ mb: 2 }}
+                                    InputProps={{ sx: { borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' } }}
                                 />
                                 <Button 
                                     variant="contained" 
@@ -180,54 +204,75 @@ function App() {
                                     startIcon={<AccountCircleIcon />}
                                     onClick={handleEmployeeLogin}
                                     disabled={!employeeId}
+                                    sx={{ py: 1.5, borderRadius: 4, fontWeight: 700, fontSize: '1rem', textTransform: 'none', boxShadow: '0 4px 12px rgba(33, 150, 243, 0.2)' }}
                                 >   
-                                    Login with Employee ID
+                                    Login with ID
                                 </Button>
                             </Box>
                         </Stack>
                     </Paper>
                 ) : (
                     <Box width="100%" display="flex" flexDirection="column" alignItems="center">
-                        <Stack direction="row" spacing={1} mb={3} flexWrap="wrap" justifyContent="center">
+                         <Paper className="glass-card" sx={{ p: 1, borderRadius: 5, mb: 4, display: 'flex', gap: 1 }}>
                             <Button 
-                                variant={view === 'game' ? "contained" : "outlined"} 
+                                variant={view === 'game' ? "contained" : "text"} 
                                 onClick={() => setView('game')}
+                                sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
                             >
                                 Play Solo
                             </Button>
                             <Button 
-                                variant={view === 'join' ? "contained" : "outlined"} 
+                                variant={view === 'join' ? "contained" : "text"} 
                                 onClick={() => setView('join')}
+                                sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
                             >
-                                Join Game
+                                Join Room
                             </Button>
                             {user.is_admin && (
                                 <>
                                     <Button 
-                                        variant={view === 'host' ? "contained" : "outlined"} 
+                                        variant={view === 'host' ? "contained" : "text"} 
                                         onClick={() => setView('host')}
+                                        sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
                                     >
-                                        Host Game
+                                        Host
                                     </Button>
                                     <Button 
-                                        variant={view === 'questions' ? "contained" : "outlined"} 
+                                        variant={view === 'questions' ? "contained" : "text"} 
                                         onClick={() => setView('questions')}
+                                        sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
                                     >
                                         Questions
                                     </Button>
+                                    <Button 
+                                        variant={view === 'categories' ? "contained" : "text"} 
+                                        onClick={() => setView('categories')}
+                                        sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
+                                    >
+                                        Sets
+                                    </Button>
                                 </>
                             )}
-                        </Stack>
+                        </Paper>
 
-                        <Button 
-                            variant="outlined" 
-                            size="small" 
-                            color="inherit" 
-                            onClick={handleLogout}
-                            sx={{ mb: 2 }}
-                        >
-                            Logout
-                        </Button>
+                        <Box sx={{ position: 'fixed', top: 20, right: 20 }}>
+                            <Button 
+                                variant="contained" 
+                                color="inherit"
+                                size="small" 
+                                onClick={handleLogout}
+                                sx={{ 
+                                    borderRadius: 3, 
+                                    bgcolor: 'rgba(255,255,255,0.7)', 
+                                    backdropFilter: 'blur(5px)',
+                                    fontWeight: 700,
+                                    textTransform: 'none',
+                                    color: '#666'
+                                }}
+                            >
+                                Logout 🚪
+                            </Button>
+                        </Box>
 
                         {view === 'game' && (
                             <>
@@ -244,28 +289,41 @@ function App() {
                              <QuestionManager />
                         )}
 
+                        {view === 'categories' && user.is_admin && (
+                             <QuestionSetManager />
+                        )}
+
                         {view === 'join' && (
                             !joinCode ? (
-                                <Box mt={4} display="flex" flexDirection="column" alignItems="center" gap={2}>
-                                    <Typography variant="h6">Enter Session Code</Typography>
-                                    <TextField 
-                                        label="Code" 
-                                        variant="outlined" 
-                                        value={joinCode} 
-                                        onChange={(e: any) => setJoinCode(e.target.value.toUpperCase())} 
-                                    />
-                                    <Button 
-                                        variant="contained" 
-                                        color="primary" 
-                                        disabled={joinCode.length < 6}
-                                        onClick={() => {}} // JoinSession handles polling, just passing code
-                                    >
-                                        Enter
-                                    </Button>
+                                <Box mt={4} display="flex" flexDirection="column" alignItems="center" width="100%">
+                                    <Paper className="glass-card" sx={{ p: 4, borderRadius: 6, width: '100%', maxWidth: 400, textAlign: 'center' }}>
+                                        <Typography variant="h5" fontWeight={800} mb={3}>Enter Room Code 🔑</Typography>
+                                        <TextField 
+                                            label="Session Code" 
+                                            variant="outlined" 
+                                            fullWidth
+                                            placeholder="XXXXXX"
+                                            value={joinCode} 
+                                            onChange={(e: any) => setJoinCode(e.target.value.toUpperCase())} 
+                                            sx={{ mb: 3 }}
+                                            InputProps={{ sx: { borderRadius: 4, fontSize: '1.5rem', textAlign: 'center', letterSpacing: 4, fontWeight: 900 } }}
+                                        />
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary" 
+                                            fullWidth
+                                            size="large"
+                                            disabled={joinCode.length < 6}
+                                            onClick={() => {}} // JoinSession handles polling
+                                            sx={{ borderRadius: 4, py: 1.5, fontWeight: 800, fontSize: '1.1rem' }}
+                                        >
+                                            Join Lobby 🚀
+                                        </Button>
+                                    </Paper>
                                 </Box>
                             ) : (
                                 <Box mt={2} width="100%">
-                                    <Button onClick={() => setJoinCode('')} sx={{ mb: 2 }}>Back</Button>
+                                    <Button onClick={() => setJoinCode('')} sx={{ mb: 2, fontWeight: 700 }}>⬅️ Change Room</Button>
                                     <JoinSession sessionCode={joinCode} user={user} onUpdateUser={handleUserUpdate}/>
                                 </Box>
                             )
