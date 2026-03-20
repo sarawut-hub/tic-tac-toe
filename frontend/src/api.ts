@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Extend AxiosRequestConfig to include retry property
 interface RetryConfig extends InternalAxiosRequestConfig {
