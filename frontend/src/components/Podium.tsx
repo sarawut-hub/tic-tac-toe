@@ -34,7 +34,7 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
     // Sort descending by score
     const sortedPlayers = [...players].sort((a, b) => b.session_score - a.session_score);
     const top3 = sortedPlayers.slice(0, 3);
-    const others = sortedPlayers.slice(3);
+    // const others = sortedPlayers.slice(3);
 
     return (
         <Box 
