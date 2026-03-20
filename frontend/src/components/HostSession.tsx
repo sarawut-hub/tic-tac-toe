@@ -104,7 +104,7 @@ const HostSession: React.FC = () => {
     useEffect(() => {
         let timer: any;
         if (session?.status === 'ACTIVE' && session.end_time) {
-            timer = setInterval(() => {
+            timer = setInterval(async () => {
                 const now = new Date().getTime();
                 // Ensure backend time is treated as UTC
                 const endTimeStr = session.end_time.endsWith('Z') ? session.end_time : session.end_time + 'Z';
@@ -113,10 +113,17 @@ const HostSession: React.FC = () => {
                 
                 if (diff <= 0) {
                     setTimeLeft('00:00');
-                    // Check if we should auto-transition to podium (backend should update status eventually or we can force fetch)
-                     if (session.status !== 'ENDED') {
-                         // Optional: could manually trigger a check
-                     }
+                    clearInterval(timer);
+                    // Auto-end the session if not already ended
+                    if (session.status !== 'ENDED') {
+                        try {
+                            await endSession(session.code);
+                        } catch (e) {
+                            // Might already be ended, just show podium
+                        }
+                        setSession((prev: any) => ({ ...prev, status: 'ENDED' }));
+                        setShowPodium(true);
+                    }
                 } else {
                     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
                     const seconds = Math.floor((diff % (1000 * 60)) / 1000);

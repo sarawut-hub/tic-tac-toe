@@ -176,28 +176,41 @@ const Podium: React.FC<PodiumProps> = ({ players, onClose, isAdmin }) => {
                 </Box>
             </Box>
 
-            {/* List of others */}
-            {others.length > 0 && (
-                <Paper sx={{ width: '100%', mb: 4, borderRadius: 4, overflow: 'hidden' }} elevation={0}>
+            {/* Full ranked list of ALL players */}
+            {sortedPlayers.length > 0 && (
+                <Paper sx={{ width: '100%', mb: 4, borderRadius: 4, overflow: 'hidden' }} elevation={0} className="glass-card">
                     <List disablePadding>
-                        <ListItem sx={{ bgcolor: 'secondary.main', color: 'white', py: 1 }}>
-                            <ListItemText primary="Honorable Mentions" primaryTypographyProps={{ fontWeight: 'bold', align: 'center', variant: 'subtitle1' }} />
+                        <ListItem sx={{ bgcolor: 'rgba(33,150,243,0.1)', py: 1.5 }}>
+                            <ListItemText primary="🏅 Full Rankings" primaryTypographyProps={{ fontWeight: 900, align: 'center', variant: 'subtitle1', color: 'primary' }} />
                         </ListItem>
-                        {others.map((p, index) => (
-                            <ListItem key={p.user.id} divider sx={{ px: 2 }}>
-                                <ListItemAvatar>
-                                    <Box sx={{ width: 40, height: 40, overflow: 'hidden', borderRadius: '50%', border: '1px solid #eee', position: 'relative' }}>
-                                        <Character config={getAvatarConfig(p.user)} size={40} />
-                                        <Box sx={{ position: 'absolute', bottom: 0, right: 0, bgcolor: 'rgba(0,0,0,0.5)', color: 'white', fontSize: 10, px: 0.5, borderRadius: 1 }}>{index + 4}</Box>
+                        {sortedPlayers.map((p, index) => {
+                            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}.`;
+                            const bgColor = index === 0 ? 'rgba(255,215,0,0.1)' : index === 1 ? 'rgba(192,192,192,0.1)' : index === 2 ? 'rgba(205,127,50,0.1)' : 'transparent';
+                            return (
+                                <ListItem key={p.user.id} divider sx={{ px: 2, py: 1.5, bgcolor: bgColor }}>
+                                    <ListItemAvatar>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Typography fontWeight={900} sx={{ minWidth: 36, fontSize: index < 3 ? '1.4rem' : '1rem', color: 'text.secondary' }}>
+                                                {medal}
+                                            </Typography>
+                                            <Box sx={{ width: 40, height: 40, overflow: 'hidden', borderRadius: '50%', border: '2px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
+                                                <Character config={getAvatarConfig(p.user)} size={40} />
+                                            </Box>
+                                        </Box>
+                                    </ListItemAvatar>
+                                    <ListItemText 
+                                        primary={p.user.username} 
+                                        secondary={`Total Score: ${p.user?.score ?? '-'}`}
+                                        primaryTypographyProps={{ fontWeight: 700, fontSize: '1rem' }}
+                                        secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                                    />
+                                    <Box textAlign="right">
+                                        <Typography fontWeight={900} color="primary" variant="h6">{p.session_score}</Typography>
+                                        <Typography variant="caption" color="text.secondary">pts</Typography>
                                     </Box>
-                                </ListItemAvatar>
-                                <ListItemText 
-                                    primary={p.user.username} 
-                                    primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem' }}
-                                />
-                                <Typography fontWeight="bold" color="primary" variant="body2">{p.session_score} pts</Typography>
-                            </ListItem>
-                        ))}
+                                </ListItem>
+                            );
+                        })}
                     </List>
                 </Paper>
             )}

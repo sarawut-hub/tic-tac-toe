@@ -117,20 +117,33 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
     if result == "win":
         user.score += 1
         user.current_streak += 1
-        if user.current_streak == 3:
-            user.score += 1 
-            user.current_streak = 0
+        
+        # Trigger quiz AND bonus point when streak reaches 3
+        if user.current_streak >= 3:
+            user.score += 1  # Bonus point for 3-win streak
+            user.current_streak = 0  # Reset streak
             if user.bot_difficulty < 5:
                 user.bot_difficulty += 1
-        
-        # Quiz chance
-        if random.random() < 0.3:
+            
+            # Quiz question on 3-win streak (guaranteed, not random)
             answered = user.answered_questions if user.answered_questions else []
-            all_q = db.query(models.Question).all()
+            
+            # If in session, filter by session's question set
+            available_q = []
+            if session_code:
+                session = db.query(models.GameSession).filter(models.GameSession.code == session_code).first()
+                if session and session.question_ids:
+                    all_q = db.query(models.Question).filter(models.Question.id.in_(session.question_ids)).all()
+                else:
+                    all_q = db.query(models.Question).all()
+            else:
+                all_q = db.query(models.Question).all()
+            
             available_q = [q for q in all_q if q.id not in answered]
             if not available_q:
                 user.answered_questions = []
                 available_q = all_q
+            
             if available_q:
                 selected_q = random.choice(available_q)
                 original_options = list(selected_q.options)
@@ -236,6 +249,8 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
                         "data": {"user_id": user.id, "score": session_score}
                     }, answer.session_code)
     
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(user, "answered_questions")
     db.commit()
     db.refresh(user)
     

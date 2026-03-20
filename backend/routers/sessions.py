@@ -51,6 +51,27 @@ def create_session(session: schemas.SessionCreate, db: Session = Depends(get_db)
     db.refresh(new_session)
     return new_session
 
+# IMPORTANT: /sessions/history must be declared BEFORE /sessions/{code}
+# otherwise FastAPI will match 'history' as a session code and return 404
+@router.get("/sessions/history", response_model=List[schemas.SessionStatusResponse])
+def get_session_history(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    sessions = db.query(models.GameSession).filter(
+        models.GameSession.host_id == current_user.id
+    ).order_by(models.GameSession.created_at.desc()).all()
+    
+    # Auto-end any expired sessions in history
+    now = datetime.utcnow()
+    changed = False
+    for s in sessions:
+        if s.status == "ACTIVE" and s.end_time and now > s.end_time:
+            s.status = "ENDED"
+            changed = True
+    
+    if changed:
+        db.commit()
+        
+    return sessions
+
 @router.get("/sessions/{code}", response_model=schemas.SessionStatusResponse)
 def get_session(code: str, db: Session = Depends(get_db)):
     session = db.query(models.GameSession).filter(models.GameSession.code == code).first()
@@ -170,12 +191,6 @@ async def end_session(code: str, db: Session = Depends(get_db), current_user: sc
     }, code)
     
     return {"message": "Session ended"}
-
-@router.get("/sessions/history", response_model=List[schemas.SessionStatusResponse])
-def get_session_history(db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    return db.query(models.GameSession).filter(
-        models.GameSession.host_id == current_user.id
-    ).order_by(models.GameSession.created_at.desc()).all()
 
 @router.websocket("/ws/{code}")
 async def websocket_endpoint(websocket: WebSocket, code: str):

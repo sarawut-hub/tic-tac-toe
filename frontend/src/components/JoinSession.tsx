@@ -98,8 +98,24 @@ const JoinSession: React.FC<JoinSessionProps> = ({ sessionCode, user, onUpdateUs
              setPlayers(p);
         };
 
-        return () => ws.close();
-    }, [sessionCode, user.id]);
+        // Auto-end timer check
+        const timer = setInterval(() => {
+            if (session?.status === 'ACTIVE' && session?.end_time) {
+                const now = new Date().getTime();
+                const endTimeStr = session.end_time.endsWith('Z') ? session.end_time : session.end_time + 'Z';
+                const end = new Date(endTimeStr).getTime();
+                if (now >= end) {
+                    setSession((prev: any) => ({ ...prev, status: 'ENDED' }));
+                    clearInterval(timer);
+                }
+            }
+        }, 3000); // Check every 3s
+
+        return () => {
+            ws.close();
+            clearInterval(timer);
+        };
+    }, [sessionCode, user.id, session?.status, session?.end_time]);
     
     const handleSaveAvatar = async (config: AvatarConfig) => {
         setAvatarConfig(config);
@@ -206,6 +222,7 @@ const JoinSession: React.FC<JoinSessionProps> = ({ sessionCode, user, onUpdateUs
                     sessionScore={localSessionScore}
                     onSessionScoreUpdate={(newScore) => setLocalSessionScore(newScore)}
                     avatarConfig={avatarConfig}
+                    endTime={session.end_time}
                 />
             </Box>
         );

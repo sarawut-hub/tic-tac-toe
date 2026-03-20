@@ -18,9 +18,32 @@ const Game: React.FC<{
     sessionCode?: string, 
     sessionScore?: number,
     onSessionScoreUpdate?: (score: number) => void,
-    avatarConfig?: any
-}> = ({ user, onUpdateUser, sessionCode, sessionScore, onSessionScoreUpdate, avatarConfig }) => {
+    avatarConfig?: any,
+    endTime?: string
+}> = ({ user, onUpdateUser, sessionCode, sessionScore, onSessionScoreUpdate, avatarConfig, endTime }) => {
     const { playSFX } = useSound();
+    const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!endTime) return;
+        
+        const timer = setInterval(() => {
+            const now = new Date();
+            const end = new Date(endTime);
+            const diff = end.getTime() - now.getTime();
+            
+            if (diff <= 0) {
+                setTimeLeft("0:00");
+                clearInterval(timer);
+            } else {
+                const mins = Math.floor(diff / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                setTimeLeft(`${mins}:${secs < 10 ? '0' : ''}${secs}`);
+            }
+        }, 1000);
+        
+        return () => clearInterval(timer);
+    }, [endTime]);
   const storageKey = `ttt_game_state_${user.id}_${sessionCode || 'solo'}`;
 
   const [board, setBoard] = useState<(string | null)[]>(() => {
@@ -90,7 +113,7 @@ const Game: React.FC<{
     const isProcessing = React.useRef(false);
 
     const handleClick = async (i: number) => {
-        if (board[i] || winner || !isXNext || quizQuestion || loading || isProcessing.current) return;
+        if (board[i] || winner || !isXNext || quizQuestion || loading || isProcessing.current || timeLeft === "0:00") return;
         
         isProcessing.current = true;
         setLoading(true);
@@ -164,11 +187,18 @@ const Game: React.FC<{
 
   return (
     <Box display="flex" flexDirection="column" alignItems="center" gap={3} sx={{ perspective: '1000px' }}>
-      <Paper elevation={0} className="glass-card" sx={{ p: 2, borderRadius: 3, border: '1px solid rgba(255,255,255,0.3)' }}>
-          <Typography variant="h5" color="primary" sx={{ fontWeight: 800 }}>
-            {winner ? (winner === 'Draw' ? "🤝 It's a Draw!" : `🎉 Winner: ${winner === 'X' ? 'You' : 'Bot'}!`) : (isXNext ? "👉 Your Turn (X)" : "🤖 Bot Thinking...")}
-          </Typography>
-      </Paper>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+            <Paper elevation={0} className="glass-card" sx={{ p: 2, borderRadius: 3, border: '1px solid rgba(255,255,255,0.3)' }}>
+                <Typography variant="h5" color="primary" sx={{ fontWeight: 800 }}>
+                    {winner ? (winner === 'Draw' ? "🤝 It's a Draw!" : `🎉 Winner: ${winner === 'X' ? 'You' : 'Bot'}!`) : (isXNext ? "👉 Your Turn (X)" : "🤖 Bot Thinking...")}
+                </Typography>
+            </Paper>
+            {timeLeft && (
+                <Paper elevation={0} sx={{ p: 2, borderRadius: 3, bgcolor: '#FFEBEE', color: '#D32F2F', display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="h5" fontWeight="900">⏱️ {timeLeft}</Typography>
+                </Paper>
+            )}
+        </Box>
       
       <Box sx={{ 
           width: 320, 
