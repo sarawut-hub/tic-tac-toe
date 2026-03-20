@@ -62,7 +62,7 @@ const Game: React.FC<{
     return Date.now();
   });
 
-  const [quizQuestion, setQuizQuestion] = useState<{id: number, question: string, options: string[], image_data?: string} | null>(null);
+  const [quizQuestion, setQuizQuestion] = useState<{id: number, question_text: string, options: any[], image_data?: string} | null>(null);
   
   const [loading, setLoading] = useState(false);
 
@@ -87,45 +87,44 @@ const Game: React.FC<{
 
   // Remove local calculateWinner and checkWinnerForMove logic as it's now on backend
 
-  const handleClick = async (i: number) => {
-    if (board[i] || winner || !isXNext || quizQuestion || loading) return;
-    
-    setLoading(true);
-    try {
-        playSFX('CLICK');
-        const response: any = await makeMove(i, sessionCode);
+    const isProcessing = React.useRef(false);
+
+    const handleClick = async (i: number) => {
+        if (board[i] || winner || !isXNext || quizQuestion || loading || isProcessing.current) return;
         
-        if (response.state) {
-            setBoard(response.state.board);
-            setIsXNext(response.state.is_x_next);
-        } else {
-            // Game ended (response contains user, question, session_score)
-            // Need to deduce board state from 'X' move OR backend should return final board
-            // Let's assume backend returns board even on end in future, 
-            // but for now let's manually update board for player move at least
-            const newBoard = [...board];
-            newBoard[i] = 'X';
-            setBoard(newBoard);
+        isProcessing.current = true;
+        setLoading(true);
+        try {
+            playSFX('CLICK');
+            const response: any = await makeMove(i, sessionCode);
+            
+            if (response.state) {
+                setBoard(response.state.board);
+                setIsXNext(response.state.is_x_next);
+            }
+            
+            if (response.user) {
+                onUpdateUser(response.user);
+            }
             
             if (response.result) {
                 setWinner(response.result === 'win' ? 'X' : response.result === 'lose' ? 'O' : 'Draw');
             }
-
+            
             if (response.question) {
                 setQuizQuestion(response.question);
             }
-        }
 
-        if (response.user) onUpdateUser(response.user);
-        if (response.session_score !== undefined && onSessionScoreUpdate) {
-            onSessionScoreUpdate(response.session_score);
+            if (response.session_score !== undefined && onSessionScoreUpdate) {
+                onSessionScoreUpdate(response.session_score);
+            }
+        } catch (e) {
+            console.error("Move failed", e);
+        } finally {
+            setLoading(false);
+            isProcessing.current = false;
         }
-    } catch (e) {
-        console.error("Move failed", e);
-    } finally {
-        setLoading(false);
-    }
-  };
+    };
 
   // Bot move is now handled by backend makeMove call
   
@@ -302,7 +301,7 @@ const Game: React.FC<{
                 </Box>
             )}
             <Typography variant="h5" gutterBottom textAlign="center" sx={{ mb: 4, fontWeight: 800, color: '#333' }}>
-                {quizQuestion?.question}
+                {quizQuestion?.question_text}
             </Typography>
          
             <Box sx={{ 

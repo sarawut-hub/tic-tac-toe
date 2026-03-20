@@ -50,9 +50,19 @@ const Reports: React.FC = () => {
 
     return (
         <Box sx={{ mt: 4, width: '100%', maxWidth: 1000, mx: 'auto' }}>
-            <Box display="flex" alignItems="center" mb={4}>
-                <AssessmentIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
-                <Typography variant="h4" fontWeight={900} color="primary">Session Reports 📊</Typography>
+            <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
+                <Box display="flex" alignItems="center">
+                    <AssessmentIcon color="primary" sx={{ fontSize: 40, mr: 2 }} />
+                    <Typography variant="h4" fontWeight={900} color="primary">Session Reports 📊</Typography>
+                </Box>
+                <Button 
+                    variant="outlined" 
+                    onClick={loadHistory}
+                    disabled={loading}
+                    sx={{ borderRadius: 3, fontWeight: 'bold' }}
+                >
+                    Refresh 🔄
+                </Button>
             </Box>
 
             <TableContainer component={Paper} className="glass-card" sx={{ borderRadius: 5, overflow: 'hidden' }} elevation={0}>

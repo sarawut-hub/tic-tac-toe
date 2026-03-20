@@ -104,13 +104,14 @@ def login_employee(login_data: EmployeeLogin, response: Response, db: Session = 
     # Create JWT
     token = create_access_token({"sub": user.username})
     
-    # Set cookie
+    # Set cookie - be careful with Secure/SameSite on localhost
+    is_prod = os.getenv("ENVIRONMENT") == "production"
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True, 
-        samesite='None', # สำคัญ: อนุญาตข้ามโดเมน
-        secure=True # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+        samesite='None' if is_prod else 'Lax',
+        secure=is_prod
     )
     
     return {"access_token": token, "token_type": "bearer", "user": user}
@@ -185,13 +186,14 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
         else:
             redirect_url = f"{redirect_base}?token={token}"
 
+        is_prod = os.getenv("ENVIRONMENT") == "production"
         response = RedirectResponse(url=redirect_url) 
         response.set_cookie(
             key="access_token",
             value=token,
             httponly=True,
-            samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
-            secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+            samesite='None' if is_prod else 'Lax',
+            secure=is_prod
         )
         return response
 
@@ -261,13 +263,14 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
         else:
              redirect_url = f"{redirect_base}?token={token}"
 
+        is_prod = os.getenv("ENVIRONMENT") == "production"
         response = RedirectResponse(url=redirect_url) 
         response.set_cookie(
             key="access_token",
             value=token,
             httponly=True,
-            samesite='None',  # สำคัญ: อนุญาตข้ามโดเมน
-            secure=True       # สำคัญ: ต้องใช้กับ HTTPS เท่านั้น
+            samesite='None' if is_prod else 'Lax',
+            secure=is_prod
         )
         return response
 

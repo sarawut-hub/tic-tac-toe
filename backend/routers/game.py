@@ -53,14 +53,14 @@ async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), cu
     
     if winner == 'X':
         # Player Won
-        result_pkg = await handle_game_end("win", user, db, move.session_code)
+        result_pkg = await handle_game_end("win", user, db, board, move.session_code)
         target_obj.active_game_state = None
         db.commit()
         return result_pkg
     
     if None not in board:
         # Draw
-        result_pkg = await handle_game_end("draw", user, db, move.session_code)
+        result_pkg = await handle_game_end("draw", user, db, board, move.session_code)
         target_obj.active_game_state = None
         db.commit()
         return result_pkg
@@ -73,32 +73,46 @@ async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), cu
     winner = game_logic.calculate_winner(board)
     if winner == 'O':
         # Bot Won
-        result_pkg = await handle_game_end("lose", user, db, move.session_code)
+        result_pkg = await handle_game_end("lose", user, db, board, move.session_code)
         target_obj.active_game_state = None
         db.commit()
         return result_pkg
     
     if None not in board:
         # Draw
-        result_pkg = await handle_game_end("draw", user, db, move.session_code)
+        result_pkg = await handle_game_end("draw", user, db, board, move.session_code)
         target_obj.active_game_state = None
         db.commit()
         return result_pkg
 
-    # Update state
-    state["board"] = board
-    state["is_x_next"] = True # Back to user
-    target_obj.active_game_state = state
+    # Update state - Create a NEW dict and use flag_modified to ensure SQLAlchemy detects change
+    new_state = {
+        "board": list(board), # Create a copy of the list
+        "is_x_next": True,
+        "startTime": state.get("startTime", time.time())
+    }
+    target_obj.active_game_state = new_state
+    
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(target_obj, "active_game_state")
+    
     db.commit()
     
     return {
         "user": user,
-        "state": state
+        "state": new_state
     }
 
-async def handle_game_end(result: str, user: models.User, db: Session, session_code: str = None):
+async def handle_game_end(result: str, user: models.User, db: Session, board: List[Optional[str]] = None, session_code: str = None):
     session_score = None
     question_data = None
+    state = None
+    if board:
+        state = {
+            "board": board,
+            "is_x_next": False,
+            "winner": result
+        }
     
     if result == "win":
         user.score += 1
@@ -157,12 +171,28 @@ async def handle_game_end(result: str, user: models.User, db: Session, session_c
         "user": user,
         "session_score": session_score,
         "question": question_data,
-        "result": result
+        "result": result,
+        "state": state
     }
 
 @router.post("/game/result", response_model=schemas.GameResultResponse)
 async def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    return await handle_game_end(score_update.result, current_user, db, score_update.session_code)
+    target_obj = current_user
+    if score_update.session_code:
+        session = db.query(models.GameSession).filter(models.GameSession.code == score_update.session_code).first()
+        if session:
+            player = db.query(models.SessionPlayer).filter(
+                models.SessionPlayer.session_id == session.id,
+                models.SessionPlayer.user_id == current_user.id
+            ).first()
+            if player:
+                target_obj = player
+    
+    board = None
+    if target_obj.active_game_state:
+        board = target_obj.active_game_state.get("board")
+        
+    return await handle_game_end(score_update.result, current_user, db, board, score_update.session_code)
 
 @router.post("/game/quiz_answer", response_model=schemas.GameResultResponse)
 async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):

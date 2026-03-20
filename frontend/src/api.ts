@@ -1,6 +1,6 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const API_BASE_URL = 'https://tic-tac-toe-nwbp.onrender.com';
+const API_BASE_URL = 'http://localhost:8000';
 
 // Extend AxiosRequestConfig to include retry property
 interface RetryConfig extends InternalAxiosRequestConfig {
@@ -191,4 +191,4 @@ export const updateAvatar = async (code: string, _userId: number, avatarConfig: 
 export const getWebSocket = (code: string) => {
     const wsUrl = API_BASE_URL.replace('http', 'ws') + `/api/ws/${code}`;
     return new WebSocket(wsUrl);
-};
+};

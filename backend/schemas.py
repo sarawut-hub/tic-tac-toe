@@ -63,19 +63,6 @@ class SessionCreate(BaseModel):
     question_ids: Optional[List[int]] = []
     question_set_id: Optional[int] = None
 
-class SessionStatusResponse(BaseModel):
-    id: int
-    code: str
-    name: Optional[str] = None
-    status: str
-    host_id: int
-    time_limit_minutes: Optional[int] = None
-    question_ids: Optional[List[int]] = []
-    question_set_id: Optional[int] = None
-    
-    class Config:
-        orm_mode = True
-
 class AvatarUpdate(BaseModel):
     config: Any # JSON config
 
@@ -85,6 +72,20 @@ class SessionPlayerResponse(BaseModel):
     user: User
     session_score: int
     avatar_config: Optional[Any] = None
+    
+    class Config:
+        orm_mode = True
+
+class SessionStatusResponse(BaseModel):
+    id: int
+    code: str
+    name: Optional[str] = None
+    status: str
+    host_id: int
+    time_limit_minutes: Optional[int] = None
+    question_ids: Optional[List[int]] = []
+    question_set_id: Optional[int] = None
+    players: List[SessionPlayerResponse] = []
     
     class Config:
         orm_mode = True
