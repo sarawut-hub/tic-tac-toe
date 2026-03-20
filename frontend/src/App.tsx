@@ -6,6 +6,7 @@ import HostSession from './components/HostSession';
 import JoinSession from './components/JoinSession';
 import QuestionManager from './components/QuestionManager';
 import QuestionSetManager from './components/QuestionSetManager';
+import Reports from './components/Reports';
 import { 
   Container, 
   CssBaseline, 
@@ -18,11 +19,33 @@ import {
   createTheme,
   Stack,
   TextField,
-  Divider
+  Divider,
+  IconButton
 } from '@mui/material';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import GoogleIcon from '@mui/icons-material/Google';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import VolumeUpIcon from '@mui/icons-material/VolumeUp';
+import VolumeOffIcon from '@mui/icons-material/VolumeOff';
+import { SoundProvider, useSound } from './hooks/useSound';
+
+const SoundToggle = () => {
+    const { isMuted, toggleMute } = useSound();
+    return (
+        <IconButton 
+            onClick={toggleMute} 
+            sx={{ 
+                bgcolor: 'rgba(255,255,255,0.7)', 
+                backdropFilter: 'blur(5px)',
+                borderRadius: 3,
+                p: 1
+            }}
+        >
+            {isMuted ? <VolumeOffIcon color="error" /> : <VolumeUpIcon color="primary" />}
+        </IconButton>
+    );
+};
+
 const theme = createTheme({
     palette: {
         mode: 'light',
@@ -251,11 +274,19 @@ function App() {
                                     >
                                         Sets
                                     </Button>
+                                    <Button 
+                                        variant={view === 'reports' ? "contained" : "text"} 
+                                        onClick={() => setView('reports')}
+                                        sx={{ borderRadius: 4, px: 3, fontWeight: 700, textTransform: 'none' }}
+                                    >
+                                        Reports
+                                    </Button>
                                 </>
                             )}
                         </Paper>
 
-                        <Box sx={{ position: 'fixed', top: 20, right: 20 }}>
+                        <Box sx={{ position: 'fixed', top: 20, right: 20, display: 'flex', gap: 1 }}>
+                            <SoundToggle />
                             <Button 
                                 variant="contained" 
                                 color="inherit"
@@ -291,6 +322,10 @@ function App() {
 
                         {view === 'categories' && user.is_admin && (
                              <QuestionSetManager />
+                        )}
+
+                        {view === 'reports' && user.is_admin && (
+                             <Reports />
                         )}
 
                         {view === 'join' && (
@@ -336,4 +371,10 @@ function App() {
   );
 }
 
-export default App;
+export default function Root() {
+    return (
+        <SoundProvider>
+            <App />
+        </SoundProvider>
+    );
+}

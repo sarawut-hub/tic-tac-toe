@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSound } from '../hooks/useSound';
 import { 
     Box, 
     Button, 
@@ -22,6 +23,7 @@ import {
 import Podium from './Podium';
 
 const HostSession: React.FC = () => {
+    const { playSFX } = useSound();
     const [timeLimit, setTimeLimit] = useState(5);
     const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
     const [allQuestions, setAllQuestions] = useState<any[]>([]);
@@ -73,6 +75,7 @@ const HostSession: React.FC = () => {
             ws.onmessage = (event: any) => {
                 const message = JSON.parse(event.data);
                 if (message.type === 'PLAYER_JOINED') {
+                    playSFX('JOIN');
                     fetchPlayers();
                 } else if (message.type === 'SCORE_UPDATE') {
                     setPlayers((prev: any[]) => prev.map(p => 
@@ -81,6 +84,7 @@ const HostSession: React.FC = () => {
                         : p
                     ));
                 } else if (message.type === 'SESSION_STARTED') {
+                    playSFX('START');
                     setSession((prev: any) => ({ 
                         ...prev, 
                         status: 'ACTIVE', 

@@ -212,7 +212,8 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
     return {
         "user": user,
         "session_score": session_score,
-        "question": None
+        "question": None,
+        "is_correct": answer.answer_text == correct_text
     }
 
 

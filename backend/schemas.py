@@ -94,6 +94,8 @@ class GameResultResponse(BaseModel):
     question: Optional[Question] = None # Question for quiz
     session_score: Optional[int] = None
     state: Optional[Any] = None # Current game state
+    result: Optional[str] = None
+    is_correct: Optional[bool] = None
 
 class MoveRequest(BaseModel):
     position: int # 0-8

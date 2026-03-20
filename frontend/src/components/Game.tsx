@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Square from './Square';
+import { useSound } from '../hooks/useSound';
 import { submitQuizAnswer, makeMove } from '../api';
 import { Box, Typography, Button, Paper, Dialog, DialogTitle, DialogContent, Chip } from '@mui/material';
 import { keyframes } from '@emotion/react';
@@ -19,6 +20,7 @@ const Game: React.FC<{
     onSessionScoreUpdate?: (score: number) => void,
     avatarConfig?: any
 }> = ({ user, onUpdateUser, sessionCode, sessionScore, onSessionScoreUpdate, avatarConfig }) => {
+    const { playSFX } = useSound();
   const storageKey = `ttt_game_state_${user.id}_${sessionCode || 'solo'}`;
 
   const [board, setBoard] = useState<(string | null)[]>(() => {
@@ -75,6 +77,7 @@ const Game: React.FC<{
   useEffect(() => {
     if (winner === 'X') {
         setShowCheer(true);
+        playSFX('VICTORY');
         setTimeout(() => setShowCheer(false), 3000);
     }
     if (winner) {
@@ -89,6 +92,7 @@ const Game: React.FC<{
     
     setLoading(true);
     try {
+        playSFX('CLICK');
         const response: any = await makeMove(i, sessionCode);
         
         if (response.state) {
@@ -136,6 +140,11 @@ const Game: React.FC<{
           
           if (response.session_score !== undefined && onSessionScoreUpdate) {
                onSessionScoreUpdate(response.session_score);
+          }
+          if (response.is_correct) {
+              playSFX('CORRECT');
+          } else {
+              playSFX('WRONG');
           }
           setQuizQuestion(null);
           // Reload page or reset game? 
