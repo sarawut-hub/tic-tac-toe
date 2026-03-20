@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Square from './Square';
-import { recordGameResult, submitQuizAnswer } from '../api';
+import { submitQuizAnswer, makeMove } from '../api';
 import { Box, Typography, Button, Paper, Dialog, DialogTitle, DialogContent, Chip } from '@mui/material';
 import { keyframes } from '@emotion/react';
 import Character from './Character';
@@ -19,152 +19,127 @@ const Game: React.FC<{
     onSessionScoreUpdate?: (score: number) => void,
     avatarConfig?: any
 }> = ({ user, onUpdateUser, sessionCode, sessionScore, onSessionScoreUpdate, avatarConfig }) => {
-  const [board, setBoard] = useState<(string | null)[]>(Array(9).fill(null));
-  const [isXNext, setIsXNext] = useState(true);
+  const storageKey = `ttt_game_state_${user.id}_${sessionCode || 'solo'}`;
+
+  const [board, setBoard] = useState<(string | null)[]>(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+        try {
+            return JSON.parse(saved).board;
+        } catch (e) {
+            console.error("Failed to parse saved board", e);
+        }
+    }
+    return Array(9).fill(null);
+  });
+  
+  const [isXNext, setIsXNext] = useState<boolean>(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+        try {
+            return JSON.parse(saved).isXNext;
+        } catch (e) {
+            console.error("Failed to parse saved turn", e);
+        }
+    }
+    return true;
+  });
+
   const [winner, setWinner] = useState<string | null>(null);
   const [showCheer, setShowCheer] = useState(false);
-  const [startTime, setStartTime] = useState<number>(Date.now());
-  const [quizQuestion, setQuizQuestion] = useState<{id: number, question: string, options: string[]} | null>(null);
-  const [gameDuration, setGameDuration] = useState<number>(0);
   
+  const [startTime, setStartTime] = useState<number>(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+        try {
+            return JSON.parse(saved).startTime || Date.now();
+        } catch (e) {
+            console.error("Failed to parse saved startTime", e);
+        }
+    }
+    return Date.now();
+  });
+
+  const [quizQuestion, setQuizQuestion] = useState<{id: number, question: string, options: string[]} | null>(null);
+  
+  const [loading, setLoading] = useState(false);
+
+  // Save state on change
+  useEffect(() => {
+    if (!winner && !quizQuestion) {
+        localStorage.setItem(storageKey, JSON.stringify({ board, isXNext, startTime }));
+    }
+  }, [board, isXNext, startTime, winner, quizQuestion, storageKey]);
+
   // Trigger cheer on win
   useEffect(() => {
     if (winner === 'X') {
         setShowCheer(true);
         setTimeout(() => setShowCheer(false), 3000);
     }
-  }, [winner]);
-
-  useEffect(() => {
-    if (!isXNext && !winner && !quizQuestion) {
-      const timer = setTimeout(() => {
-        makeBotMove();
-      }, 500);
-      return () => clearTimeout(timer);
+    if (winner) {
+        localStorage.removeItem(storageKey);
     }
-  }, [isXNext, winner, board, quizQuestion]); 
+  }, [winner, storageKey]);
 
-  const calculateWinner = (squares: (string | null)[]) => {
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6],
-    ];
-    for (let i = 0; i < lines.length; i++) {
-      const [a, b, c] = lines[i];
-      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-        return squares[a];
-      }
-    }
-    return null;
-  };
+  // Remove local calculateWinner and checkWinnerForMove logic as it's now on backend
 
-  const checkWinnerForMove = (squares: (string | null)[], player: string) => {
-      const lines = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8],
-        [0, 3, 6], [1, 4, 7], [2, 5, 8],
-        [0, 4, 8], [2, 4, 6],
-      ];
-      for (let i = 0; i < lines.length; i++) {
-        const [a, b, c] = lines[i];
-        if (squares[a] === player && squares[b] === player && squares[c] === null) return c;
-        if (squares[a] === player && squares[c] === player && squares[b] === null) return b;
-        if (squares[b] === player && squares[c] === player && squares[a] === null) return a;
-      }
-      return null;
-  };
-
-  const handleClick = (i: number) => {
-    if (board[i] || winner || !isXNext || quizQuestion) return;
-    const newBoard = [...board];
-    newBoard[i] = 'X';
-    setBoard(newBoard);
-    setIsXNext(false);
-    checkGameStatus(newBoard);
-  };
-
-  const makeBotMove = () => {
-    if (calculateWinner(board) || !board.includes(null)) return;
-    const availableMoves = board.map((val, idx) => val === null ? idx : null).filter(val => val !== null) as number[];
-    if (availableMoves.length === 0) return;
+  const handleClick = async (i: number) => {
+    if (board[i] || winner || !isXNext || quizQuestion || loading) return;
     
-    let move: number | null = null;
-    const diff = user.bot_difficulty || 1;
-
-    // Level 2+: Block
-    if (diff >= 2) {
-       move = checkWinnerForMove(board, 'X');
-    }
-    // Level 3+: Try directly to win
-    if (diff >= 3 && move === null) {
-       move = checkWinnerForMove(board, 'O');
-    }
-
-    // Default Random
-    if (move === null) {
-        move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
-    }
-    
-    const newBoard = [...board];
-    newBoard[move] = 'O';
-    setBoard(newBoard);
-    setIsXNext(true);
-    checkGameStatus(newBoard);
-  };
-
-  const checkGameStatus = (currentBoard: (string | null)[]) => {
-    const win = calculateWinner(currentBoard);
-    if (win) {
-      setWinner(win);
-      handleGameEnd(win);
-    } else if (!currentBoard.includes(null)) {
-      setWinner('Draw');
-      handleGameEnd('Draw');
-    }
-  };
-
-  const handleGameEnd = async (result: string) => {
-    const endTime = Date.now();
-    const duration = (endTime - startTime) / 1000;
-    setGameDuration(duration);
-
-    let apiResult: 'win' | 'lose' | 'draw' = 'draw';
-    if (result === 'X') apiResult = 'win';
-    if (result === 'O') apiResult = 'lose';
-    
+    setLoading(true);
     try {
-        const response: any = await recordGameResult(apiResult, duration, sessionCode);
+        const response: any = await makeMove(i, sessionCode);
         
-        // Always update user stats
-        if (response.user) {
-            onUpdateUser(response.user);
+        if (response.state) {
+            setBoard(response.state.board);
+            setIsXNext(response.state.is_x_next);
+        } else {
+            // Game ended (response contains user, question, session_score)
+            // Need to deduce board state from 'X' move OR backend should return final board
+            // Let's assume backend returns board even on end in future, 
+            // but for now let's manually update board for player move at least
+            const newBoard = [...board];
+            newBoard[i] = 'X';
+            setBoard(newBoard);
+            
+            if (response.result) {
+                setWinner(response.result === 'win' ? 'X' : response.result === 'lose' ? 'O' : 'Draw');
+            }
+
+            if (response.question) {
+                setQuizQuestion(response.question);
+            }
         }
 
-        if (response.question) {
-            setQuizQuestion(response.question);
-        }
-        
-        // Update session score if provided (might be undefined if question triggered)
-        if (response.session_score !== undefined && response.session_score !== null && onSessionScoreUpdate) {
-             onSessionScoreUpdate(response.session_score);
+        if (response.user) onUpdateUser(response.user);
+        if (response.session_score !== undefined && onSessionScoreUpdate) {
+            onSessionScoreUpdate(response.session_score);
         }
     } catch (e) {
-        console.error("Failed to record game", e);
+        console.error("Move failed", e);
+    } finally {
+        setLoading(false);
     }
   };
 
+  // Bot move is now handled by backend makeMove call
+  
   const handleQuizAnswer = async (index: number) => {
       if (!quizQuestion) return;
       try {
           const answerText = quizQuestion.options[index];
-          const response: any = await submitQuizAnswer(quizQuestion.id, answerText, gameDuration, sessionCode);
+          // Use gameDuration as timeTaken for simplicity or calculate actual quiz time
+          const timeSpent = (Date.now() - startTime) / 1000;
+          const response: any = await submitQuizAnswer(quizQuestion.id, answerText, timeSpent, sessionCode);
           if (response.user) onUpdateUser(response.user);
-          else onUpdateUser(response); // If returns user directly
           
           if (response.session_score !== undefined && onSessionScoreUpdate) {
                onSessionScoreUpdate(response.session_score);
           }
           setQuizQuestion(null);
+          // Reload page or reset game? 
+          setWinner('Match Ended'); // Trigger end
       } catch (e) {
           console.error("Quiz submission failed", e);
           setQuizQuestion(null);

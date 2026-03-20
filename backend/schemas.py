@@ -74,3 +74,18 @@ class GameResultResponse(BaseModel):
     user: User
     question: Optional[Question] = None # Question for quiz
     session_score: Optional[int] = None
+    state: Optional[Any] = None # Current game state
+
+class MoveRequest(BaseModel):
+    position: int # 0-8
+    session_code: Optional[str] = None
+
+class GameState(BaseModel):
+    board: List[Optional[str]]
+    is_x_next: bool
+    winner: Optional[str] = None
+    startTime: Optional[float] = None
+
+class WebSocketMessage(BaseModel):
+    type: str # "JOIN", "START", "END", "SCORE_UPDATE"
+    data: Any

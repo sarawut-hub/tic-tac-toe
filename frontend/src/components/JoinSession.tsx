@@ -4,7 +4,7 @@ import Game from './Game';
 import Podium from './Podium';
 import CharacterCustomizer from './CharacterCustomizer';
 import Character, { AvatarConfig } from './Character';
-import { getSession, getSessionPlayers, updateAvatar, joinSession } from '../api';
+import { getSession, getSessionPlayers, updateAvatar, joinSession, getWebSocket } from '../api';
 
 interface JoinSessionProps {
     sessionCode: string;
@@ -43,38 +43,62 @@ const JoinSession: React.FC<JoinSessionProps> = ({ sessionCode, user, onUpdateUs
 
     }, [user.id, sessionCode]);
 
-    useEffect(() => {
-        // Reset local session score on session code change
-        setLocalSessionScore(0);
-        let interval: any;
-        const poll = async () => {
-            try {
-                const s = await getSession(sessionCode);
-                setSession(s);
-                const p = await getSessionPlayers(sessionCode);
-                setPlayers(p);
-                
-                // Sync local session score from server poll if available
-                const myPlayer = p.find((pl: any) => pl.user.id === user.id);
-                if (myPlayer) {
-                    setLocalSessionScore(myPlayer.session_score);
-                    // If we have an avatar config but server doesn't, sync it aggressively?
-                    // Or relies on user saving it.
-                }
+    const fetchSessionData = async () => {
+        try {
+            const s = await getSession(sessionCode);
+            setSession(s);
+            const p = await getSessionPlayers(sessionCode);
+            setPlayers(p);
+            
+            const myPlayer = p.find((pl: any) => pl.user.id === user.id);
+            if (myPlayer) {
+                setLocalSessionScore(myPlayer.session_score);
+            }
+            setLoading(false);
+        } catch (e) {
+            console.error("Session load failed", e);
+            setLoading(false);
+        }
+    };
 
-                setLoading(false);
-                
-                if (s.status === 'ENDED') {
-                    // Stop polling if needed
+    useEffect(() => {
+        setLocalSessionScore(0);
+        fetchSessionData();
+
+        const ws = getWebSocket(sessionCode);
+        ws.onmessage = (event: any) => {
+            const message = JSON.parse(event.data);
+            console.log("WS Message:", message);
+            
+            if (message.type === 'PLAYER_JOINED') {
+                fetchPlayers();
+            } else if (message.type === 'SESSION_STARTED') {
+                setSession((prev: any) => ({ 
+                    ...prev, 
+                    status: 'ACTIVE', 
+                    start_time: message.data.start_time, 
+                    end_time: message.data.end_time 
+                }));
+            } else if (message.type === 'SESSION_ENDED') {
+                setSession((prev: any) => ({ ...prev, status: 'ENDED' }));
+            } else if (message.type === 'SCORE_UPDATE') {
+                setPlayers((prev: any[]) => prev.map(p => 
+                    p.user.id === message.data.user_id 
+                    ? { ...p, session_score: message.data.score } 
+                    : p
+                ));
+                if (message.data.user_id === user.id) {
+                    setLocalSessionScore(message.data.score);
                 }
-            } catch (e) {
-                console.error("Session load failed", e);
-                setLoading(false);
             }
         };
-        poll();
-        interval = setInterval(poll, 3000);
-        return () => clearInterval(interval);
+
+        const fetchPlayers = async () => {
+             const p = await getSessionPlayers(sessionCode);
+             setPlayers(p);
+        };
+
+        return () => ws.close();
     }, [sessionCode, user.id]);
     
     const handleSaveAvatar = async (config: AvatarConfig) => {

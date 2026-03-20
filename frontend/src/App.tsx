@@ -33,8 +33,16 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0);
   const [employeeId, setEmployeeId] = useState('');
-  const [view, setView] = useState('game');
-  const [joinCode, setJoinCode] = useState('');
+  const [view, setView] = useState(localStorage.getItem('current_view') || 'game');
+  const [joinCode, setJoinCode] = useState(localStorage.getItem('current_join_code') || '');
+
+  useEffect(() => {
+    localStorage.setItem('current_view', view);
+  }, [view]);
+
+  useEffect(() => {
+    localStorage.setItem('current_join_code', joinCode);
+  }, [joinCode]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -58,21 +66,19 @@ function App() {
 
     if (joinCodeParam) {
         // If logged in, use it immediately
-        // If not logged in (loading true), we'll apply it after user check finishes
-        // Store it just in case we need to login first
         localStorage.setItem('pending_join_code', joinCodeParam);
         setJoinCode(joinCodeParam);
         setView('join');
-        // Clean URL to avoid re-triggering logic on reload if desired, or keep it
         window.history.replaceState({}, document.title, basePath);
     }
     
-    // Try fetch user anyway (cookie might exist even if no localStorage token)
+    // Try fetch user anyway
     fetchUser().then((u) => {
         if (u) {
             setUser(u);
         } else {
             localStorage.removeItem('access_token');
+            // If not logged in, maybe reset view? But let's keep it for now.
         }
         setLoading(false);
     });

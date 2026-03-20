@@ -15,6 +15,7 @@ class User(Base):
     answered_questions = Column(JSON, default=[]) # List of question IDs answered
     bot_difficulty = Column(Integer, default=1) # Difficulty level 1-5
     is_admin = Column(Boolean, default=False)
+    active_game_state = Column(JSON, nullable=True) # { board, is_x_next, startTime }
 
 class GameSession(Base):
     __tablename__ = "game_sessions"
@@ -44,6 +45,7 @@ class SessionPlayer(Base):
     
     session_score = Column(Integer, default=0)
     avatar_config = Column(JSON, nullable=True) # JSON config for avatar
+    active_game_state = Column(JSON, nullable=True) # { board, is_x_next, startTime }
     
     session = relationship("GameSession", back_populates="players")
     user = relationship("User")

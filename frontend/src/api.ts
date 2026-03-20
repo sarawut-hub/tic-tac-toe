@@ -1,6 +1,13 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig } from 'axios';
 
 const API_BASE_URL = 'https://tic-tac-toe-nwbp.onrender.com';
+
+// Extend AxiosRequestConfig to include retry property
+interface RetryConfig extends InternalAxiosRequestConfig {
+  retry?: number;
+  retryCount?: number;
+  retryDelay?: number;
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -17,24 +24,23 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('access_token');
-      // Ignore 401 for /api/users/me to avoid loop, let App.tsx handle it (show login)
-      if (error.config.url.includes('/api/users/me')) {
-          return Promise.reject(error);
-      }
-      
-      const basePath = import.meta.env.BASE_URL || '/';
-      // Normalize paths to avoid mismatch (e.g. trailing slashes)
-      const currentPath = window.location.pathname.replace(/\/+$/, "");
-      const targetPath = basePath.replace(/\/+$/, "");
-
-      if (currentPath !== targetPath) {
-          window.location.href = basePath; 
-      }
+  async (error) => {
+    const config = error.config as RetryConfig;
+    if (!config || !config.retry) return Promise.reject(error);
+    
+    config.retryCount = config.retryCount || 0;
+    
+    if (config.retryCount >= config.retry) {
+        return Promise.reject(error);
     }
-    return Promise.reject(error);
+    
+    config.retryCount += 1;
+    const backoff = new Promise((resolve) => {
+        setTimeout(() => resolve(null), config.retryDelay || 1000);
+    });
+    
+    await backoff;
+    return api(config);
   }
 );
 
@@ -65,12 +71,17 @@ export const fetchUser = async () => {
   }
 };
 
+export const makeMove = async (position: number, sessionCode?: string) => {
+  const response = await api.post('/api/game/move', { position, session_code: sessionCode }, { retry: 3 } as any);
+  return response.data;
+};
+
 export const recordGameResult = async (result: 'win' | 'lose' | 'draw', timeTaken: number, sessionCode?: string) => {
   const response = await api.post('/api/game/result', { 
       result, 
       time_taken: timeTaken, 
       session_code: sessionCode 
-  });
+  }, { retry: 2 } as any);
   return response.data;
 };
 
@@ -80,7 +91,7 @@ export const submitQuizAnswer = async (questionId: number, answerText: string, t
       answer_text: answerText,
       time_taken: timeTaken,
       session_code: sessionCode
-  });
+  }, { retry: 3 } as any);
   return response.data;
 };
 
@@ -141,19 +152,12 @@ export const endSession = async (code: string) => {
     return response.data;
 };
 
-export const updateAvatar = async (gameId: string, playerId: string, avatar: string) => {
-  // TODO: Add your actual API endpoint logic here
-  const response = await fetch(`/api/games/${gameId}/players/${playerId}/avatar`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ avatar }),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update avatar');
-  }
-
-  return response.json();
+export const updateAvatar = async (code: string, _userId: number, avatarConfig: string) => {
+    const response = await api.put(`/api/sessions/${code}/avatar`, { avatar_config: JSON.parse(avatarConfig) });
+    return response.data;
 };
+
+export const getWebSocket = (code: string) => {
+    const wsUrl = API_BASE_URL.replace('http', 'ws') + `/api/ws/${code}`;
+    return new WebSocket(wsUrl);
+};

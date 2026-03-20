@@ -5,6 +5,9 @@ import database, models, schemas
 from routers.auth import get_current_user
 import secrets
 from datetime import datetime, timedelta
+from fastapi import WebSocket, WebSocketDisconnect
+from websockets import manager
+import json
 
 router = APIRouter()
 
@@ -90,6 +93,13 @@ def join_session(code: str, db: Session = Depends(get_db), current_user: schemas
     db.add(new_player)
     db.commit()
     db.refresh(new_player)
+    
+    # Notify via WebSocket
+    await manager.broadcast({
+        "type": "PLAYER_JOINED",
+        "data": {"username": user.username, "id": user.id}
+    }, code)
+    
     return db.query(models.SessionPlayer).filter(models.SessionPlayer.id == new_player.id).first()
 
 @router.get("/sessions/{code}/players", response_model=List[schemas.SessionPlayerResponse])
@@ -119,6 +129,17 @@ def start_session(code: str, db: Session = Depends(get_db), current_user: schema
     db.add(session)
     db.commit()
     db.refresh(session)
+    
+    # Notify via WebSocket
+    await manager.broadcast({
+        "type": "SESSION_STARTED",
+        "data": {
+            "status": "ACTIVE",
+            "start_time": session.start_time.isoformat(),
+            "end_time": session.end_time.isoformat() if session.end_time else None
+        }
+    }, code)
+    
     return session
 
 @router.post("/sessions/{code}/end")
@@ -132,7 +153,24 @@ def end_session(code: str, db: Session = Depends(get_db), current_user: schemas.
     session.status = "ENDED"
     session.end_time = datetime.utcnow()
     db.commit()
+    
+    # Notify via WebSocket
+    await manager.broadcast({
+        "type": "SESSION_ENDED",
+        "data": {"status": "ENDED"}
+    }, code)
+    
     return {"message": "Session ended"}
+
+@router.websocket("/ws/{code}")
+async def websocket_endpoint(websocket: WebSocket, code: str):
+    await manager.connect(websocket, code)
+    try:
+        while True:
+            # We don't expect messages from client for now, just keep alive
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, code)
 
 @router.put("/sessions/{code}/avatar", response_model=schemas.SessionPlayerResponse)
 def update_avatar(code: str, avatar: schemas.AvatarUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):

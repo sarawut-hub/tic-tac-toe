@@ -5,6 +5,9 @@ import models, schemas
 from typing import List
 from .auth import get_current_user, get_db
 import random
+import game_logic
+import time
+from websockets import manager
 
 router = APIRouter()
 
@@ -12,114 +15,161 @@ router = APIRouter()
 def read_users_me(current_user: schemas.User = Depends(get_current_user)):
     return current_user
 
-@router.post("/game/result", response_model=schemas.GameResultResponse)
-def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    user = current_user # Use authenticated user
+import random
+import game_logic
+import time
+
+@router.post("/game/move", response_model=schemas.GameResultResponse)
+async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    user = current_user
+    session_score = None
+    
+    # Get current state
+    target_obj = user
+    if move.session_code:
+        session = db.query(models.GameSession).filter(models.GameSession.code == move.session_code).first()
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
+        player = db.query(models.SessionPlayer).filter(
+            models.SessionPlayer.session_id == session.id,
+            models.SessionPlayer.user_id == user.id
+        ).first()
+        if not player:
+            raise HTTPException(status_code=404, detail="Player not in session")
+        target_obj = player
+
+    # Initialize state if empty
+    state = target_obj.active_game_state
+    if not state:
+        state = {
+            "board": [None] * 9,
+            "is_x_next": True,
+            "startTime": time.time()
+        }
+
+    board = state["board"]
+    if board[move.position] is not None or not state["is_x_next"]:
+        raise HTTPException(status_code=400, detail="Invalid move")
+
+    # Player Move
+    board[move.position] = 'X'
+    winner = game_logic.calculate_winner(board)
+    
+    if winner == 'X':
+        # Player Won
+        result_pkg = await handle_game_end("win", user, db, move.session_code)
+        target_obj.active_game_state = None
+        db.commit()
+        return result_pkg
+    
+    if None not in board:
+        # Draw
+        result_pkg = await handle_game_end("draw", user, db, move.session_code)
+        target_obj.active_game_state = None
+        db.commit()
+        return result_pkg
+
+    # Bot Move
+    bot_move = game_logic.make_bot_move(board, user.bot_difficulty)
+    if bot_move is not None:
+        board[bot_move] = 'O'
+    
+    winner = game_logic.calculate_winner(board)
+    if winner == 'O':
+        # Bot Won
+        result_pkg = await handle_game_end("lose", user, db, move.session_code)
+        target_obj.active_game_state = None
+        db.commit()
+        return result_pkg
+    
+    if None not in board:
+        # Draw
+        result_pkg = await handle_game_end("draw", user, db, move.session_code)
+        target_obj.active_game_state = None
+        db.commit()
+        return result_pkg
+
+    # Update state
+    state["board"] = board
+    state["is_x_next"] = True # Back to user
+    target_obj.active_game_state = state
+    db.commit()
+    
+    return {
+        "user": user,
+        "state": state
+    }
+
+async def handle_game_end(result: str, user: models.User, db: Session, session_code: str = None):
     session_score = None
     question_data = None
     
-    # Ensure bot_difficulty is initialized (for older records or safety)
-    if getattr(user, "bot_difficulty", None) is None:
-        user.bot_difficulty = 1
-
-    # Update regular score
-    if score_update.result == "win":
+    if result == "win":
         user.score += 1
         user.current_streak += 1
         if user.current_streak == 3:
-            user.score += 1 # Bonus point
-            user.current_streak = 0 # Reset streak
-            
-            # Increase difficulty (max 5)
+            user.score += 1 
+            user.current_streak = 0
             if user.bot_difficulty < 5:
                 user.bot_difficulty += 1
-
         
-        # Chance to get a quiz question (30% -> increased to 100% for testing? No, stick to random or ask user if they want always)
-        # User requested modification to logic, imply keeping chance but changing *what* is returned.
-        # But maybe they want it always? "Scores +100 and Randomize..."
-        # Let's keep 30% chance.
+        # Quiz chance
         if random.random() < 0.3:
-            # Filter already answered questions
             answered = user.answered_questions if user.answered_questions else []
-            # Query all questions
             all_q = db.query(models.Question).all()
             available_q = [q for q in all_q if q.id not in answered]
-            
             if not available_q:
-                # Reset answered if all done
                 user.answered_questions = []
                 available_q = all_q
-                
             if available_q:
                 selected_q = random.choice(available_q)
-                
-                # Shuffle options for display ONLY (do not save to DB)
-                # Create a Pydantic model instance manually to control options
-                original_options = list(selected_q.options) # Copy
+                original_options = list(selected_q.options)
                 shuffled_options = random.sample(original_options, len(original_options))
-                
-                # We need to construct a schema.Question object
-                # But schema.Question requires correct_answer_index.
-                # If we shuffle, the index changes.
-                # Since frontend validates via backend submit_answer now (using text),
-                # we can send a dummy index or calculate new index.
-                # Let's calculate new index just in case frontend relies on it for something (though it shouldn't cheat).
                 original_correct_text = original_options[selected_q.correct_answer_index]
                 new_correct_index = shuffled_options.index(original_correct_text)
-                
                 question_data = schemas.Question(
                     id=selected_q.id,
                     question_text=selected_q.question_text,
                     options=shuffled_options,
                     correct_answer_index=new_correct_index 
                 )
-
-
-    elif score_update.result == "lose":
+    elif result == "lose":
         user.score -= 1
-        user.current_streak = 0 # Reset streak
-        # Decrease difficulty (min 1)
-        if getattr(user, "bot_difficulty", None) is None:
-            user.bot_difficulty = 1
+        user.current_streak = 0
         if user.bot_difficulty > 1:
             user.bot_difficulty -= 1
-    else:
-        pass # Draw
 
-    # Handle Session Score if session_code provided
-    if score_update.session_code:
-        session = db.query(models.GameSession).filter(models.GameSession.code == score_update.session_code).first()
+    if session_code:
+        session = db.query(models.GameSession).filter(models.GameSession.code == session_code).first()
         if session and session.status == "ACTIVE":
              player = db.query(models.SessionPlayer).filter(
                  models.SessionPlayer.session_id == session.id,
                  models.SessionPlayer.user_id == user.id
              ).first()
-             
              if player:
-                if score_update.result == "win":
+                if result == "win":
                     player.session_score += 1 
-                elif score_update.result == "lose":
-                    pass 
-                
                 session_score = player.session_score
-             
-             # Session might have questions?
-             if session.question_ids and question_data is None:
-                  # Maybe implement specific session question logic later
-                  pass
+                
+                # Notify via WebSocket
+                await manager.broadcast({
+                    "type": "SCORE_UPDATE",
+                    "data": {"user_id": user.id, "score": session_score}
+                }, session_code)
 
-    db.commit()
-    db.refresh(user)
-    
     return {
-        "user": user, 
+        "user": user,
         "session_score": session_score,
-        "question": question_data 
+        "question": question_data,
+        "result": result
     }
 
+@router.post("/game/result", response_model=schemas.GameResultResponse)
+async def record_game_result(score_update: schemas.ScoreUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+    return await handle_game_end(score_update.result, current_user, db, score_update.session_code)
+
 @router.post("/game/quiz_answer", response_model=schemas.GameResultResponse)
-def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
+async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
     user = current_user
     question = db.query(models.Question).filter(models.Question.id == answer.question_id).first()
     session_score = None
@@ -127,21 +177,22 @@ def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Depends(g
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
         
-    # Get correct answer text
-    # Assuming options are stored as list of strings in DB
     correct_text = question.options[question.correct_answer_index]
     
     if answer.answer_text == correct_text:
-        # Correct answer
-        user.score += 100 # +100 as requested
+        time_bonus = 0
+        if answer.time_taken:
+            time_bonus = max(10, 100 - int(answer.time_taken))
+        else:
+            time_bonus = 100
+            
+        user.score += time_bonus
         
-        # Mark as answered
         current_answered = list(user.answered_questions) if user.answered_questions else []
         if question.id not in current_answered:
             current_answered.append(question.id)
             user.answered_questions = current_answered
             
-        # Also update session score if needed
         if answer.session_code:
             session = db.query(models.GameSession).filter(models.GameSession.code == answer.session_code).first()
             if session and session.status == "ACTIVE":
@@ -150,8 +201,23 @@ def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Depends(g
                     models.SessionPlayer.user_id == user.id
                 ).first()
                 if player:
-                    player.session_score += 100 # +100 to session score too
+                    player.session_score += time_bonus
                     session_score = player.session_score
+                    
+                    # Notify via WebSocket
+                    await manager.broadcast({
+                        "type": "SCORE_UPDATE",
+                        "data": {"user_id": user.id, "score": session_score}
+                    }, answer.session_code)
+    
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "user": user,
+        "session_score": session_score,
+        "question": None
+    }
     
     db.commit()
     db.refresh(user)

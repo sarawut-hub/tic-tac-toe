@@ -15,7 +15,7 @@ import {
     Chip
 } from '@mui/material';
 import { QRCodeCanvas } from 'qrcode.react';
-import { createSession, getSession, getSessionPlayers, startSession, endSession, fetchQuestions } from '../api';
+import { createSession, getSession, getSessionPlayers, startSession, endSession, fetchQuestions, getWebSocket } from '../api';
 import Podium from './Podium';
 
 const HostSession: React.FC = () => {
@@ -44,23 +44,36 @@ const HostSession: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        let interval: any;
         if (session && session.status !== 'ENDED') {
-            const poll = () => {
-                getSession(session.code).then(data => {
-                    setSession((prev: any) => ({ ...prev, ...data })); // Merge to keep older properties if needed
-                    if (data.status === 'ENDED') {
-                         clearInterval(interval);
-                         setShowPodium(true);
-                    }
-                });
-                getSessionPlayers(session.code).then(setPlayers);
+            const fetchPlayers = () => getSessionPlayers(session.code).then(setPlayers);
+            fetchPlayers();
+
+            const ws = getWebSocket(session.code);
+            ws.onmessage = (event: any) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'PLAYER_JOINED') {
+                    fetchPlayers();
+                } else if (message.type === 'SCORE_UPDATE') {
+                    setPlayers((prev: any[]) => prev.map(p => 
+                        p.user.id === message.data.user_id 
+                        ? { ...p, session_score: message.data.score } 
+                        : p
+                    ));
+                } else if (message.type === 'SESSION_STARTED') {
+                    setSession((prev: any) => ({ 
+                        ...prev, 
+                        status: 'ACTIVE', 
+                        start_time: message.data.start_time, 
+                        end_time: message.data.end_time 
+                    }));
+                } else if (message.type === 'SESSION_ENDED') {
+                    setSession((prev: any) => ({ ...prev, status: 'ENDED' }));
+                    setShowPodium(true);
+                }
             };
-            poll(); // Initial call
-            interval = setInterval(poll, 3000);
+            return () => ws.close();
         }
-        return () => clearInterval(interval);
-    }, [session?.code]); // Only restart if code changes, but internal logic checks status
+    }, [session?.code]);
 
     // Timer logic
     useEffect(() => {
