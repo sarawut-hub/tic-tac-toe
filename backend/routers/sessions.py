@@ -110,11 +110,10 @@ async def join_session(code: str, db: Session = Depends(get_db), current_user: s
     if session.status != "WAITING":
          raise HTTPException(status_code=400, detail="Cannot join active or ended session via join, create new player")
 
-    # Reset current streak for new session
-    # current_user might be attached to a different session (from auth dependency)
+    # Reset stats for new session (streak, difficulty, game state)
     user = db.merge(current_user)
     user.current_streak = 0
-    # db.add(user) # merge already attaches it
+    user.bot_difficulty = 1  # Reset bot difficulty for each new session
     
     new_player = models.SessionPlayer(
         session_id=session.id,
