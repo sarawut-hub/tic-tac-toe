@@ -91,7 +91,7 @@ def login_employee(login_data: EmployeeLogin, response: Response, db: Session = 
             score=0,
             current_streak=0,
             is_admin=is_admin,
-            # bot_difficulty=1, total_games=0, wins=0 # defaults
+            # bot_difficulty=3, total_games=0, wins=0 # defaults
         )
         db.add(user)
         db.commit()

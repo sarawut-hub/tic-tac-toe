@@ -113,7 +113,7 @@ async def join_session(code: str, db: Session = Depends(get_db), current_user: s
     # Reset stats for new session (streak, difficulty, game state)
     user = db.merge(current_user)
     user.current_streak = 0
-    user.bot_difficulty = 1  # Reset bot difficulty for each new session
+    user.bot_difficulty = 3  # Start session with difficulty 3
     
     new_player = models.SessionPlayer(
         session_id=session.id,

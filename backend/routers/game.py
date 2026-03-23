@@ -122,8 +122,6 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
         if user.current_streak >= 3:
             user.score += 1  # Bonus point for 3-win streak
             user.current_streak = 0  # Reset streak
-            if user.bot_difficulty < 5:
-                user.bot_difficulty += 1
             
             # Quiz question on 3-win streak (guaranteed, not random)
             answered = user.answered_questions if user.answered_questions else []
@@ -140,9 +138,6 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
                 all_q = db.query(models.Question).all()
             
             available_q = [q for q in all_q if q.id not in answered]
-            if not available_q:
-                user.answered_questions = []
-                available_q = all_q
             
             if available_q:
                 selected_q = random.choice(available_q)
@@ -156,11 +151,17 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
                     options=shuffled_options,
                     correct_answer_index=new_correct_index 
                 )
+                
+                # Immediately mark as answered so it does not repeat
+                current_answered = list(user.answered_questions) if user.answered_questions else []
+                if selected_q.id not in current_answered:
+                    current_answered.append(selected_q.id)
+                    user.answered_questions = current_answered
+                    from sqlalchemy.orm.attributes import flag_modified
+                    flag_modified(user, "answered_questions")
     elif result == "lose":
         user.score -= 1
         user.current_streak = 0
-        if user.bot_difficulty > 1:
-            user.bot_difficulty -= 1
 
     if session_code:
         session = db.query(models.GameSession).filter(models.GameSession.code == session_code).first()
