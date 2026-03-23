@@ -125,6 +125,7 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
             
             # Quiz question on 3-win streak (guaranteed, not random)
             answered = user.answered_questions if user.answered_questions else []
+            player_in_session = None
             
             # If in session, filter by session's question set
             available_q = []
@@ -134,6 +135,13 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
                     all_q = db.query(models.Question).filter(models.Question.id.in_(session.question_ids)).all()
                 else:
                     all_q = db.query(models.Question).all()
+                
+                player_in_session = db.query(models.SessionPlayer).filter(
+                    models.SessionPlayer.session_id == session.id,
+                    models.SessionPlayer.user_id == user.id
+                ).first()
+                if player_in_session:
+                    answered = player_in_session.answered_questions if player_in_session.answered_questions else []
             else:
                 all_q = db.query(models.Question).all()
             
@@ -153,12 +161,19 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
                 )
                 
                 # Immediately mark as answered so it does not repeat
-                current_answered = list(user.answered_questions) if user.answered_questions else []
-                if selected_q.id not in current_answered:
-                    current_answered.append(selected_q.id)
-                    user.answered_questions = current_answered
-                    from sqlalchemy.orm.attributes import flag_modified
-                    flag_modified(user, "answered_questions")
+                from sqlalchemy.orm.attributes import flag_modified
+                if session_code and player_in_session:
+                    current_answered = list(player_in_session.answered_questions) if player_in_session.answered_questions else []
+                    if selected_q.id not in current_answered:
+                        current_answered.append(selected_q.id)
+                        player_in_session.answered_questions = current_answered
+                        flag_modified(player_in_session, "answered_questions")
+                else:
+                    current_answered = list(user.answered_questions) if user.answered_questions else []
+                    if selected_q.id not in current_answered:
+                        current_answered.append(selected_q.id)
+                        user.answered_questions = current_answered
+                        flag_modified(user, "answered_questions")
     elif result == "lose":
         user.score -= 1
         user.current_streak = 0
@@ -232,11 +247,6 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
             
         user.score += time_bonus
         
-        current_answered = list(user.answered_questions) if user.answered_questions else []
-        if question.id not in current_answered:
-            current_answered.append(question.id)
-            user.answered_questions = current_answered
-            
         if answer.session_code:
             session = db.query(models.GameSession).filter(models.GameSession.code == answer.session_code).first()
             if session and session.status == "ACTIVE":
@@ -248,11 +258,23 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
                     player.session_score += time_bonus
                     session_score = player.session_score
                     
+                    current_answered = list(player.answered_questions) if player.answered_questions else []
+                    if question.id not in current_answered:
+                        current_answered.append(question.id)
+                        player.answered_questions = current_answered
+                        from sqlalchemy.orm.attributes import flag_modified
+                        flag_modified(player, "answered_questions")
+                    
                     # Notify via WebSocket
                     await manager.broadcast({
                         "type": "SCORE_UPDATE",
                         "data": {"user_id": user.id, "score": session_score}
                     }, answer.session_code)
+        else:
+            current_answered = list(user.answered_questions) if user.answered_questions else []
+            if question.id not in current_answered:
+                current_answered.append(question.id)
+                user.answered_questions = current_answered
     
     from sqlalchemy.orm.attributes import flag_modified
     flag_modified(user, "answered_questions")

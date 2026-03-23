@@ -57,6 +57,7 @@ class SessionPlayer(Base):
     session_score = Column(Integer, default=0)
     avatar_config = Column(JSON, nullable=True) # JSON config for avatar
     active_game_state = Column(JSON, nullable=True) # { board, is_x_next, startTime }
+    answered_questions = Column(JSON, default=[]) # Track answered questions per session
     
     session = relationship("GameSession", back_populates="players")
     user = relationship("User")
