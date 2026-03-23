@@ -75,6 +75,7 @@
     "edge.js": "^6.5.0",
     "jsonwebtoken": "^9.0.3",
     "luxon": "^3.7.2",
+    "muicss": "^0.10.3",
     "reflect-metadata": "^0.2.2",
     "ws": "^8.19.0"
   },

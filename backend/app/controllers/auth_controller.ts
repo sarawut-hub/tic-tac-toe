@@ -1,16 +1,16 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
-import JwtService from '#services/jwt_service'
 
 export default class AuthController {
   /**
    * Login using employee ID (for admins or specific users)
    */
-  public async loginEmployee({ request, response }: HttpContext) {
+  public async loginEmployee({ request, response, auth, session }: HttpContext) {
     const { employee_id: employeeId } = request.only(['employee_id'])
 
     if (!employeeId) {
-      return response.badRequest({ message: 'Employee ID is required' })
+      session.flash('error', 'Employee ID is required')
+      return response.redirect('back')
     }
 
     // In the original app, it seems it just finds or creates a user with this username
@@ -23,24 +23,17 @@ export default class AuthController {
       })
     }
 
-    const token = JwtService.generate(user)
+    await auth.use('web').login(user)
 
-    return {
-      access_token: token,
-      token_type: 'bearer',
-      user: {
-        id: user.id,
-        username: user.username,
-        isAdmin: user.isAdmin,
-      },
-    }
+    return response.redirect('/app')
   }
 
   /**
-   * Logout (stateless with JWT, but could handle blacklisting if needed)
+   * Logout (session based)
    */
-  public async logout({ response }: HttpContext) {
-    return response.ok({ message: 'Logged out successfully' })
+  public async logout({ auth, response }: HttpContext) {
+    await auth.use('web').logout()
+    return response.redirect('/')
   }
 
   // Placeholder for OAuth - will implement properly if needed or keep as skeleton

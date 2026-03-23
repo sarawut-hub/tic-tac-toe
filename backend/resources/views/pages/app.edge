@@ -2,92 +2,93 @@
   @set('title', 'Arena | Tic-Tac-Toe Neo')
 
   @slot('main')
-    <div class="container" x-data="gameApp" x-init="init()">
+    <div class="container" x-data="gameApp({ user: {{ inspect(user) }}, leaderboard: {{ inspect(leaderboard) }} })">
         <!-- Header / Stats -->
-        <div class="glass animate-fade-in" style="padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 1rem;">
-            <div style="text-align: center;">
-                <div style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Total Score</div>
-                <div style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; color: var(--accent);" x-text="user?.score || 0"></div>
+        <div class="glass-panel animate-fade-in dashboard-stats">
+            <div class="text-center">
+                <div class="stat-label">Total Score</div>
+                <div class="stat-value text-accent" x-text="user?.score || 0"></div>
             </div>
-            <div style="text-align: center;">
-                <div style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Current Streak</div>
-                <div style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; color: var(--secondary);" x-text="user?.currentStreak || 0"></div>
+            <div class="text-center">
+                <div class="stat-label">Current Streak</div>
+                <div class="stat-value text-secondary" x-text="user?.currentStreak || 0"></div>
             </div>
-            <div style="text-align: center;">
-                <div style="color: var(--text-muted); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">Bot Level</div>
-                <div style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; color: var(--primary-light);" x-text="user?.botDifficulty || 1"></div>
+            <div class="text-center">
+                <div class="stat-label">Bot Level</div>
+                <div class="stat-value text-primary-light" x-text="user?.botDifficulty || 1"></div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+        <div class="app-layout">
             <!-- Game Board Area -->
             <div>
-                <div class="glass animate-fade-in" style="padding: 2rem; min-height: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div class="glass-panel animate-fade-in game-board-area">
                     <template x-if="view === 'menu'">
-                        <div style="text-align: center; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1rem;">
-                            <h2 style="font-size: 2rem; margin-bottom: 1rem;">Select Game Mode</h2>
-                            <button @click="startSinglePlayer" class="btn btn-primary" style="font-size: 1.25rem; padding: 1rem;">Single Player (VS Bot)</button>
-                            <button @click="view = 'multiplayer'" class="btn btn-secondary" style="font-size: 1.25rem; padding: 1rem;">Multiplayer Arena</button>
+                        <div class="menu-container">
+                            <h2 class="mb-1 f-xlarge">Select Game Mode</h2>
+                            <button @click="startSinglePlayer" class="mui-btn mui-btn--primary mui-btn--raised mui-btn--large p-1 f-medium">Single Player (VS Bot)</button>
+                            <button @click="view = 'multiplayer'" class="mui-btn mui-btn--secondary mui-btn--raised mui-btn--large p-1 f-medium">Multiplayer Arena</button>
                         </div>
                     </template>
 
                     <template x-if="view === 'game'">
-                        <div style="text-align: center;">
-                            <h2 style="margin-bottom: 1.5rem;">Arena: Bot Level <span x-text="user.botDifficulty"></span></h2>
+                        <div class="text-center">
+                            <h2 class="mb-1-5">Arena: Bot Level <span x-text="user.botDifficulty"></span></h2>
                             
                             <!-- The Board -->
-                            <div style="display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 10px; margin-bottom: 2rem;">
+                            <div class="tic-tac-toe-grid mb-2">
                                 <template x-for="(cell, index) in board" :key="index">
                                     <div 
                                         @click="makeMove(index)"
-                                        class="glass" 
-                                        style="display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; cursor: pointer; transition: all 0.2s;"
-                                        :style="cell === 'X' ? 'color: var(--primary);' : 'color: var(--secondary);'"
+                                        class="grid-cell" 
+                                        :class="cell === 'X' ? 'x-mark occupied' : (cell === 'O' ? 'o-mark occupied' : '')"
                                         x-text="cell"
                                     ></div>
                                 </template>
                             </div>
 
-                            <button @click="resetGame" class="btn btn-secondary">New Match</button>
+                            <button @click="resetGame" class="mui-btn mui-btn--secondary mui-btn--raised">New Match</button>
                         </div>
                     </template>
 
                     <template x-if="view === 'multiplayer'">
-                        <div style="text-align: center; width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 1.5rem;">
-                            <h2 style="font-size: 2rem;">Multiplayer Arena</h2>
-                            <div style="text-align: left;">
+                        <div class="menu-container">
+                            <h2 class="f-xlarge">Multiplayer Arena</h2>
+                            <div class="text-left">
                                 <label class="input-label">Enter Session Code</label>
-                                <div style="display: flex; gap: 0.5rem;">
-                                    <input type="text" x-model="sessionCode" class="input" placeholder="ABC123">
-                                    <button @click="joinSession" class="btn btn-primary">Join</button>
+                                <div class="flex-row-gap">
+                                    <div class="mui-textfield m-0 w-100">
+                                        <input type="text" x-model="sessionCode" placeholder="ABC123">
+                                    </div>
+                                    <button @click="joinSession" class="mui-btn mui-btn--primary mui-btn--raised m-0">Join</button>
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 1rem;">
-                                <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
-                                <span style="color: var(--text-muted);">OR</span>
-                                <div style="flex: 1; height: 1px; background: var(--glass-border);"></div>
+                            <div class="flex-center gap-1 mb-1">
+                                <div class="divider-line"></div>
+                                <span class="text-muted">OR</span>
+                                <div class="divider-line"></div>
                             </div>
-                            <button @click="createSession" class="btn btn-primary" x-show="user?.isAdmin">Create Session</button>
-                            <button @click="view = 'menu'" class="btn btn-secondary">Back to Menu</button>
+                            <button @click="createSession" class="mui-btn mui-btn--primary mui-btn--raised" x-show="user?.isAdmin">Create Session</button>
+                            <button @click="view = 'menu'" class="mui-btn mui-btn--secondary mui-btn--raised">Back to Menu</button>
                         </div>
                     </template>
                 </div>
             </div>
 
             <!-- Leaderboard Area -->
-            <div class="glass animate-fade-in" style="padding: 1.5rem; height: fit-content;">
-                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <svg style="width: 24px; height: 24px; color: var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+            <div class="glass-panel leaderboard-panel animate-fade-in">
+                <h3 class="leaderboard-header">
+                    <svg class="icon-sm text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
                     Top Challengers
                 </h3>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="flex-col-gap">
                     <template x-for="(player, index) in leaderboard" :key="player.id">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05);">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <span style="color: var(--text-muted); font-weight: 700; width: 20px;" x-text="index + 1"></span>
-                                <span x-text="player.username" style="font-weight: 500;"></span>
+                        <div class="leaderboard-row">
+                            <div class="flex-center gap-1">
+                                <span class="text-muted" style="width: 20px; font-weight: 700;" x-text="index + 1"></span>
+                                <span class="f-medium" x-text="player.username"></span>
                             </div>
-                            <span x-text="player.score" style="font-weight: 700; color: var(--accent);"></span>
+                            <span class="text-accent" style="font-weight: 700;" x-text="player.score"></span>
                         </div>
                     </template>
                 </div>
@@ -96,13 +97,13 @@
 
         <!-- Quiz Modal (Overlay) -->
         <template x-if="quiz">
-            <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 2rem;">
-                <div class="glass animate-fade-in" style="width: 100%; max-width: 500px; padding: 2.5rem; text-align: center;">
-                    <div style="color: var(--accent); font-weight: 800; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em;">Bonus Challenge!</div>
-                    <h2 style="font-size: 1.75rem; margin-bottom: 2rem;" x-text="quiz.questionText"></h2>
-                    <div style="display: grid; gap: 1rem; text-align: left;">
+            <div class="modal-overlay">
+                <div class="glass-panel animate-fade-in w-100 p-l text-center max-w-px">
+                    <div class="text-accent mb-1" style="font-weight: 800; text-transform: uppercase;">Bonus Challenge!</div>
+                    <h2 class="mb-2" x-text="quiz.questionText"></h2>
+                    <div class="flex-col-gap text-left">
                         <template x-for="(option, idx) in quiz.options" :key="idx">
-                            <button @click="submitQuiz(idx)" class="btn btn-secondary" style="width: 100%; justify-content: flex-start; padding: 1rem;" x-text="option"></button>
+                            <button @click="submitQuiz(idx)" class="mui-btn mui-btn--secondary mui-btn--raised w-100 p-1 text-left" x-text="option"></button>
                         </template>
                     </div>
                 </div>
@@ -110,112 +111,5 @@
         </template>
     </div>
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('gameApp', () => ({
-                user: null,
-                view: 'menu',
-                board: Array(9).fill(null),
-                leaderboard: [],
-                sessionCode: '',
-                quiz: null,
-                loading: false,
-
-                async init() {
-                    const token = localStorage.getItem('token');
-                    if (!token) return window.location.href = '/';
-                    
-                    await this.fetchMe();
-                    await this.fetchLeaderboard();
-                },
-
-                async fetchMe() {
-                    const res = await axios.get('/api/users/me', {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    this.user = res.data;
-                    if (this.user.activeGameState) {
-                        this.board = this.user.activeGameState.board;
-                        this.view = 'game';
-                    }
-                },
-
-                async fetchLeaderboard() {
-                    const res = await axios.get('/api/leaderboard', {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    this.leaderboard = res.data;
-                },
-
-                startSinglePlayer() {
-                    this.view = 'game';
-                },
-
-                async makeMove(index) {
-                    if (this.board[index] || this.loading) return;
-                    
-                    this.loading = true;
-                    try {
-                        const res = await axios.post('/api/game/move', { position: index }, {
-                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        this.board = res.data.state.board;
-                        this.user = res.data.user;
-                        
-                        if (res.data.quiz_question) {
-                            this.quiz = res.data.quiz_question;
-                        }
-
-                        if (res.data.state.isGameOver) {
-                            // Record result after small delay for animation
-                            setTimeout(async () => {
-                                await axios.post('/api/game/result', { winner: res.data.state.winner }, {
-                                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                                });
-                                await this.fetchLeaderboard();
-                            }, 500);
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    } finally {
-                        this.loading = false;
-                    }
-                },
-
-                async submitQuiz(idx) {
-                    try {
-                        const res = await axios.post('/api/game/quiz_answer', {
-                            question_id: this.quiz.id,
-                            answer_index: idx
-                        }, {
-                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        
-                        alert(res.data.correct ? 'Correct! +20 Points' : 'Wrong Answer!');
-                        this.quiz = null;
-                        this.user = res.data.user;
-                        await this.fetchLeaderboard();
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                resetGame() {
-                    this.board = Array(9).fill(null);
-                    // Server-side reset happens on recordResult or makeMove if game was over
-                },
-
-                async createSession() {
-                    // Placeholder for now
-                    alert('Session creation coming soon!');
-                },
-
-                async joinSession() {
-                    // Placeholder for now
-                    alert('Joining session ' + this.sessionCode);
-                }
-            }))
-        })
-    </script>
   @endslot
-@layout
+@endlayout

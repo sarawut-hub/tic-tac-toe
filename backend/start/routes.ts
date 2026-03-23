@@ -7,16 +7,35 @@ const SessionsController = () => import('#controllers/sessions_controller')
 const QuestionsController = () => import('#controllers/questions_controller')
 const QuestionSetsController = () => import('#controllers/question_sets_controller')
 
+import User from '#models/user'
+import GameSessionModel from '#models/game_session'
+import SessionPlayer from '#models/session_player'
+
 // Landing / App Pages
-router.on('/').render('pages/index')
-router.on('/app').render('pages/app')
+router.get('/', async ({ view, auth, response }) => {
+  if (await auth.check()) {
+    return response.redirect('/app')
+  }
+  return view.render('pages/index')
+})
+
+router.get('/app', async ({ auth, view }) => {
+  const user = auth.user!
+  const leaderboard = await User.query().orderBy('score', 'desc').limit(20)
+  return view.render('pages/app', { user, leaderboard })
+}).use(middleware.auth())
 
 // Session Page
-router
-  .get('/session/:code', ({ view, params }) => {
-    return view.render('pages/session', { code: params.code })
-  })
-  .use(middleware.auth())
+router.get('/session/:code', async ({ auth, view, params, response }) => {
+  const code = params.code
+  const session = await GameSessionModel.findBy('code', code)
+  if (!session) {
+    return response.notFound('Session not found')
+  }
+  const players = await SessionPlayer.query().where('sessionId', session.id).preload('user')
+  const user = auth.user!
+  return view.render('pages/session', { user, session, players, code })
+}).use(middleware.auth())
 
 // Auth Routes
 router

@@ -2,76 +2,75 @@
   @set('title', 'Competition | Tic-Tac-Toe Neo')
 
   @slot('main')
-    <div class="container" x-data="multiplayerApp" x-init="init()">
+    <div class="container" x-data="multiplayerApp({ code: '{{ code }}', user: {{ inspect(user) }}, session: {{ inspect(session) }}, players: {{ inspect(players) }} })" x-init="init()">
         <!-- Header / Status -->
-        <div class="glass animate-fade-in" style="padding: 1.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+        <div class="glass-panel animate-fade-in flex-between mb-2 p-1-5">
             <div>
-                <div style="color: var(--text-muted); font-size: 0.875rem;">Session Code</div>
-                <div style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 800; color: var(--primary-light);">{{ code }}</div>
+                <div class="text-muted" style="font-size: 0.875rem;">Session Code</div>
+                <div class="text-primary-light" style="font-family: 'Outfit'; font-size: 1.5rem; font-weight: 800;">{{ code }}</div>
             </div>
-            <div style="text-align: right;">
-                <div style="color: var(--text-muted); font-size: 0.875rem;">Status</div>
+            <div class="text-right">
+                <div class="text-muted" style="font-size: 0.875rem;">Status</div>
                 <div style="font-family: 'Outfit'; font-size: 1.25rem; font-weight: 700;" :style="session?.status === 'ACTIVE' ? 'color: #22c55e;' : 'color: var(--secondary);'" x-text="session?.status || '...' "></div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 2rem;">
+        <div class="app-layout">
             <!-- Game Board Area -->
             <div>
-                <div class="glass animate-fade-in" style="padding: 2rem; min-height: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <div class="glass-panel animate-fade-in game-board-area">
                     <template x-if="session?.status === 'WAITING'">
-                        <div style="text-align: center;">
-                            <h2 style="margin-bottom: 1rem;">Waiting for Host to Start...</h2>
-                            <p style="color: var(--text-muted); margin-bottom: 2rem;">Get ready to compete!</p>
-                            <button x-show="user?.id === session?.hostId" @click="startSession" class="btn btn-primary" style="font-size: 1.25rem; padding: 1rem 3rem;">Start Battle</button>
+                        <div class="text-center">
+                            <h2 class="mb-1">Waiting for Host to Start...</h2>
+                            <p class="text-muted mb-2">Get ready to compete!</p>
+                            <button x-show="user?.id === session?.hostId" @click="startSession" class="mui-btn mui-btn--primary mui-btn--raised mui-btn--large p-1 f-medium">Start Battle</button>
                         </div>
                     </template>
 
                     <template x-if="session?.status === 'ACTIVE'">
-                        <div style="text-align: center;">
-                            <h2 style="margin-bottom: 1.5rem;">Arena Active!</h2>
+                        <div class="text-center">
+                            <h2 class="mb-1-5">Arena Active!</h2>
                             
                             <!-- The Board -->
-                            <div style="display: grid; grid-template-columns: repeat(3, 100px); grid-template-rows: repeat(3, 100px); gap: 10px; margin-bottom: 2rem;">
+                            <div class="tic-tac-toe-grid mb-2">
                                 <template x-for="(cell, index) in board" :key="index">
                                     <div 
                                         @click="makeMove(index)"
-                                        class="glass" 
-                                        style="display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; cursor: pointer; transition: all 0.2s;"
-                                        :style="cell === 'X' ? 'color: var(--primary);' : 'color: var(--secondary);'"
+                                        class="grid-cell" 
+                                        :class="cell === 'X' ? 'x-mark occupied' : (cell === 'O' ? 'o-mark occupied' : '')"
                                         x-text="cell"
                                     ></div>
                                 </template>
                             </div>
 
-                            <button @click="resetGame" class="btn btn-secondary">New Match</button>
+                            <button @click="resetGame" class="mui-btn mui-btn--secondary mui-btn--raised">New Match</button>
                         </div>
                     </template>
 
                     <template x-if="session?.status === 'ENDED'">
-                        <div style="text-align: center;">
-                            <h1 style="font-size: 3rem; margin-bottom: 1rem;">Arena Closed</h1>
-                            <p style="margin-bottom: 2rem;">Check the final scores!</p>
-                            <a href="/app" class="btn btn-primary">Back to Dashboard</a>
+                        <div class="text-center">
+                            <h1 class="mb-1" style="font-size: 3rem;">Arena Closed</h1>
+                            <p class="mb-2">Check the final scores!</p>
+                            <a href="/app" class="mui-btn mui-btn--primary mui-btn--raised">Back to Dashboard</a>
                         </div>
                     </template>
                 </div>
             </div>
 
             <!-- Players / Scores Area -->
-            <div class="glass animate-fade-in" style="padding: 1.5rem; height: fit-content;">
-                <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <svg style="width: 24px; height: 24px; color: var(--primary-light);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+            <div class="glass-panel leaderboard-panel animate-fade-in">
+                <h3 class="leaderboard-header">
+                    <svg class="icon-sm text-primary-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                     Live Standings
                 </h3>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="flex-col-gap">
                     <template x-for="player in players" :key="player.user.id">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; background: rgba(255,255,255,0.05);">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div class="leaderboard-row">
+                            <div class="flex-center gap-1">
                                 <div style="width: 10px; height: 10px; border-radius: 50%;" :style="player.user.activeGameState ? 'background: #22c55e;' : 'background: #64748b;'"></div>
-                                <span x-text="player.user.username" style="font-weight: 500;"></span>
+                                <span class="f-medium" x-text="player.user.username"></span>
                             </div>
-                            <span x-text="player.sessionScore" style="font-weight: 700; color: var(--primary-light);"></span>
+                            <span class="text-primary-light" style="font-weight: 700;" x-text="player.sessionScore"></span>
                         </div>
                     </template>
                 </div>
@@ -80,13 +79,13 @@
 
         <!-- Quiz Modal -->
         <template x-if="quiz">
-            <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 2rem;">
-                <div class="glass animate-fade-in" style="width: 100%; max-width: 500px; padding: 2.5rem; text-align: center;">
-                    <div style="color: var(--accent); font-weight: 800; margin-bottom: 1rem; text-transform: uppercase;">Bonus Challenge!</div>
-                    <h2 style="font-size: 1.75rem; margin-bottom: 2rem;" x-text="quiz.questionText"></h2>
-                    <div style="display: grid; gap: 1rem; text-align: left;">
+            <div class="modal-overlay">
+                <div class="glass-panel animate-fade-in w-100 p-l text-center max-w-px">
+                    <div class="text-accent mb-1" style="font-weight: 800; text-transform: uppercase;">Bonus Challenge!</div>
+                    <h2 class="mb-2" x-text="quiz.questionText"></h2>
+                    <div class="flex-col-gap text-left">
                         <template x-for="(option, idx) in quiz.options" :key="idx">
-                            <button @click="submitQuiz(idx)" class="btn btn-secondary" style="width: 100%; justify-content: flex-start; padding: 1rem;" x-text="option"></button>
+                            <button @click="submitQuiz(idx)" class="mui-btn mui-btn--secondary mui-btn--raised w-100 p-1 text-left" x-text="option"></button>
                         </template>
                     </div>
                 </div>
@@ -94,126 +93,5 @@
         </template>
     </div>
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('multiplayerApp', () => ({
-                code: '{{ code }}',
-                user: null,
-                session: null,
-                players: [],
-                board: Array(9).fill(null),
-                quiz: null,
-                ws: null,
-
-                async init() {
-                    const token = localStorage.getItem('token');
-                    if (!token) return window.location.href = '/';
-                    
-                    await this.fetchUser();
-                    await this.fetchSession();
-                    await this.fetchPlayers();
-                    this.connectWS();
-                },
-
-                async fetchUser() {
-                    const res = await axios.get('/api/users/me', {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    this.user = res.data;
-                },
-
-                async fetchSession() {
-                    const res = await axios.get(`/api/sessions/${this.code}`, {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    this.session = res.data;
-                },
-
-                async fetchPlayers() {
-                    const res = await axios.get(`/api/sessions/${this.code}/players`, {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                    this.players = res.data;
-                },
-
-                connectWS() {
-                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    this.ws = new WebSocket(`${protocol}//${window.location.host}/api/ws/${this.code}`);
-                    
-                    this.ws.onmessage = (event) => {
-                        const msg = JSON.parse(event.data);
-                        if (msg.type === 'PLAYER_JOINED') {
-                            this.fetchPlayers();
-                        } else if (msg.type === 'SESSION_STARTED') {
-                            this.session.status = 'ACTIVE';
-                            this.session.start_time = msg.data.start_time;
-                        } else if (msg.type === 'SESSION_ENDED') {
-                            this.session.status = 'ENDED';
-                        } else if (msg.type === 'SCORE_UPDATE') {
-                            const p = this.players.find(p => p.user.id === msg.data.user_id);
-                            if (p) p.sessionScore = msg.data.score;
-                        }
-                    };
-                },
-
-                async startSession() {
-                    await axios.post(`/api/sessions/${this.code}/start`, {}, {
-                        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                    });
-                },
-
-                async makeMove(index) {
-                    if (this.board[index] || this.session.status !== 'ACTIVE') return;
-                    
-                    try {
-                        const res = await axios.post('/api/game/move', { 
-                            position: index,
-                            sessionCode: this.code
-                        }, {
-                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        this.board = res.data.state.board;
-                        
-                        if (res.data.quiz_question) {
-                            this.quiz = res.data.quiz_question;
-                        }
-
-                        if (res.data.state.isGameOver) {
-                            setTimeout(async () => {
-                                await axios.post('/api/game/result', { 
-                                    winner: res.data.state.winner,
-                                    sessionCode: this.code
-                                }, {
-                                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                                });
-                            }, 500);
-                        }
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                async submitQuiz(idx) {
-                    try {
-                        const res = await axios.post('/api/game/quiz_answer', {
-                            question_id: this.quiz.id,
-                            answer_index: idx,
-                            sessionCode: this.code
-                        }, {
-                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-                        });
-                        this.quiz = null;
-                        alert(res.data.correct ? 'Correct! Bonus points added.' : 'Wrong!');
-                    } catch (e) {
-                        console.error(e);
-                    }
-                },
-
-                resetGame() {
-                    this.board = Array(9).fill(null);
-                }
-            }))
-        })
-    </script>
   @endslot
-@layout
+@endlayout
