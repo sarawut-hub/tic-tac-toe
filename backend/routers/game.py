@@ -221,8 +221,12 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
     
     if answer.answer_text == correct_text:
         time_bonus = 0
-        if answer.time_taken:
-            time_bonus = max(10, 100 - int(answer.time_taken))
+        if answer.time_taken is not None:
+            # Base 100 minus 5 points per 2 seconds (2.5 points per second), minimum 10 points
+            time_bonus = max(10, int(100 - (answer.time_taken * 2.5)))
+            
+            # Accumulate time taken for tie-breaking on the leaderboard
+            user.total_time_taken = (user.total_time_taken or 0.0) + answer.time_taken
         else:
             time_bonus = 100
             
@@ -265,7 +269,7 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
 
 @router.get("/leaderboard", response_model=List[schemas.User])
 def get_leaderboard(db: Session = Depends(get_db)):
-    users = db.query(models.User).order_by(models.User.score.desc()).all()
+    users = db.query(models.User).order_by(models.User.score.desc(), models.User.total_time_taken.asc()).all()
     return users
 
 @router.post("/admin/reset", status_code=status.HTTP_200_OK)

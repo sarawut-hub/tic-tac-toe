@@ -13,6 +13,7 @@ class User(UserBase):
     current_streak: int
     bot_difficulty: int = 1
     is_admin: bool
+    total_time_taken: float = 0.0
 
     class Config:
         orm_mode = True

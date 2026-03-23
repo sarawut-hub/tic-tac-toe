@@ -24,6 +24,7 @@ class User(Base):
     bot_difficulty = Column(Integer, default=3) # Difficulty level 1-5
     is_admin = Column(Boolean, default=False)
     active_game_state = Column(JSON, nullable=True) # { board, is_x_next, startTime }
+    total_time_taken = Column(Integer, default=0) # Accumulate answering time in seconds
 
 class GameSession(Base):
     __tablename__ = "game_sessions"

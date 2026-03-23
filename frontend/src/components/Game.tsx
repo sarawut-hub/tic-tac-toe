@@ -86,6 +86,7 @@ const Game: React.FC<{
   });
 
   const [quizQuestion, setQuizQuestion] = useState<{id: number, question_text: string, options: any[], image_data?: string} | null>(null);
+  const [quizStartTime, setQuizStartTime] = useState<number | null>(null);
   
   const [loading, setLoading] = useState(false);
 
@@ -136,6 +137,7 @@ const Game: React.FC<{
             
             if (response.question) {
                 setQuizQuestion(response.question);
+                setQuizStartTime(Date.now());
             }
 
             if (response.session_score !== undefined && onSessionScoreUpdate) {
@@ -155,8 +157,8 @@ const Game: React.FC<{
       if (!quizQuestion) return;
       try {
           const answerText = quizQuestion.options[index];
-          // Use gameDuration as timeTaken for simplicity or calculate actual quiz time
-          const timeSpent = (Date.now() - startTime) / 1000;
+          // Calculate actual quiz time
+          const timeSpent = quizStartTime ? (Date.now() - quizStartTime) / 1000 : 0;
           const response: any = await submitQuizAnswer(quizQuestion.id, answerText, timeSpent, sessionCode);
           if (response.user) onUpdateUser(response.user);
           
@@ -183,6 +185,7 @@ const Game: React.FC<{
     setIsXNext(true);
     setStartTime(Date.now());
     setQuizQuestion(null);
+    setQuizStartTime(null);
   };
 
   return (
