@@ -1,0 +1,28 @@
+﻿
+> adonisjs-web-stater-kit@0.0.0 lint
+> eslint .
+
+
+C:\Users\sarawut.o\Desktop\tic-tac-toe\backend\app\controllers\auth_controller.ts
+  10:13  error  Variable name `employee_id` must match one of the following formats: camelCase, UPPER_CASE, PascalCase  @typescript-eslint/naming-convention
+
+C:\Users\sarawut.o\Desktop\tic-tac-toe\backend\app\controllers\games_controller.ts
+  149:13  error  Variable name `question_id` must match one of the following formats: camelCase, UPPER_CASE, PascalCase   @typescript-eslint/naming-convention
+  149:26  error  Variable name `answer_index` must match one of the following formats: camelCase, UPPER_CASE, PascalCase  @typescript-eslint/naming-convention
+
+C:\Users\sarawut.o\Desktop\tic-tac-toe\backend\app\controllers\question_sets_controller.ts
+  10:32  error  Variable name `question_ids` must match one of the following formats: camelCase, UPPER_CASE, PascalCase  @typescript-eslint/naming-convention
+  37:32  error  Variable name `question_ids` must match one of the following formats: camelCase, UPPER_CASE, PascalCase  @typescript-eslint/naming-convention
+
+C:\Users\sarawut.o\Desktop\tic-tac-toe\backend\app\controllers\sessions_controller.ts
+   23:19  error  Variable name `time_limit_minutes` must match one of the following formats: camelCase, UPPER_CASE, PascalCase  @typescript-eslint/naming-convention
+   23:39  error  Variable name `question_set_id` must match one of the following formats: camelCase, UPPER_CASE, PascalCase     @typescript-eslint/naming-convention
+   23:56  error  Variable name `question_ids` must match one of the following formats: camelCase, UPPER_CASE, PascalCase        @typescript-eslint/naming-convention
+  231:13  error  Variable name `avatar_config` must match one of the following formats: camelCase, UPPER_CASE, PascalCase       @typescript-eslint/naming-convention
+
+C:\Users\sarawut.o\Desktop\tic-tac-toe\backend\app\services\jwt_service.ts
+  3:1  error  All imports in the declaration are only used as types. Use `import type`  @typescript-eslint/consistent-type-imports
+
+โ– 10 problems (10 errors, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

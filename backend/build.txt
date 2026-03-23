@@ -1,0 +1,67 @@
+﻿
+> adonisjs-web-stater-kit@0.0.0 build
+> node ace build
+
+npm : 
+At line:1 char:1
++ npm run build > 
+build_error.log 2>&1
++ ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (:Str   
+ ing) [], Remote    
+Exception
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 
+node:internal/module
+s/run_main:123
+    triggerUncaughtE
+xception(
+    ^
+TypeError [ERR_UNKNO
+WN_FILE_EXTENSION]: 
+Unknown file 
+extension ".ts" for 
+C:\Users\sarawut.o\D
+esktop\tic-tac-toe\b
+ackend\bin\console.t
+s
+    at Object.getFil
+eProtocolModuleForma
+t [as file:] (node:i
+nternal/modules/esm/
+get_format:189:9)
+    at 
+defaultGetFormat (no
+de:internal/modules/
+esm/get_format:232:3
+6)
+    at defaultLoad (
+node:internal/module
+s/esm/load:145:22)
+    at async 
+nextLoad (node:inter
+nal/modules/esm/hook
+s:864:22)
+    at async 
+nextLoad (node:inter
+nal/modules/esm/hook
+s:864:22)
+    at async 
+Hooks.load (node:int
+ernal/modules/esm/ho
+oks:451:20)
+    at async Message
+Port.handleMessage (
+node:internal/module
+s/esm/worker:196:18)
+ {
+  code: 'ERR_UNKNOWN
+_FILE_EXTENSION'
+}
+
+Node.js v20.19.5
