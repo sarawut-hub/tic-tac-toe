@@ -25,7 +25,7 @@ class ScoreUpdate(BaseModel):
 
 class QuizAnswerSubmit(BaseModel):
     question_id: int
-    answer_text: str
+    answer_text: Any
     time_taken: Optional[float] = None
     session_code: Optional[str] = None
 
