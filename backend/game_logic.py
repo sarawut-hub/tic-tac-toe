@@ -35,6 +35,12 @@ def make_bot_move(board: List[Optional[str]], difficulty: int) -> Optional[int]:
         return None
     
     move = None
+    
+    # Introduce a 30% chance for the bot to make a random move 
+    # instead of playing perfectly, allowing the player to win.
+    if random.random() < 0.3:
+        return random.choice(available_moves)
+
     # Level 2+: Block player (X)
     if difficulty >= 2:
         move = check_winner_for_move(board, 'X')
