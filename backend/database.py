@@ -42,7 +42,48 @@ elif "mysql" in DATABASE_URL:
             if ca_path and os.path.exists(ca_path):
                 connect_args["ssl"]["ca"] = ca_path
 
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
+def custom_json_deserializer(value):
+    if isinstance(value, bytes):
+        # Handle Java serialized strings (magic number aced 0005)
+        # 0x74 is TC_STRING (followed by 2-byte length)
+        if value.startswith(b'\xac\xed\x00\x05\x74'):
+            try:
+                # payload starts at index 7
+                return json.loads(value[7:].decode('utf-8'))
+            except Exception as e:
+                logger.warning(f"Failed to decode Java TC_STRING JSON: {e}")
+                pass
+        # 0x7c is TC_LONGSTRING (followed by 8-byte length)
+        elif value.startswith(b'\xac\xed\x00\x05\x7c'):
+            try:
+                # payload starts at index 13
+                return json.loads(value[13:].decode('utf-8'))
+            except Exception as e:
+                logger.warning(f"Failed to decode Java TC_LONGSTRING JSON: {e}")
+                pass
+                
+        try:
+            return json.loads(value.decode('utf-8'))
+        except UnicodeDecodeError:
+            return json.loads(value)
+    return json.loads(value)
+
+engine_kwargs = {
+    "connect_args": connect_args,
+    "json_deserializer": custom_json_deserializer
+}
+
+# Add connection pooling parameters for MySQL to prevent "server has gone away" errors
+if "mysql" in DATABASE_URL:
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 3600
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

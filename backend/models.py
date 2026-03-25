@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, Table
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, Table, Text
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -15,9 +15,9 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    provider_id = Column(String, unique=True, index=True) # ID from OAuth provider
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
+    provider_id = Column(String(255), unique=True, index=True) # ID from OAuth provider
+    username = Column(String(255), unique=True, index=True)
+    email = Column(String(255), unique=True, index=True)
     score = Column(Integer, default=0)
     current_streak = Column(Integer, default=0) # Consecutive wins against bot
     answered_questions = Column(JSON, default=[]) # List of question IDs answered
@@ -30,11 +30,11 @@ class GameSession(Base):
     __tablename__ = "game_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    code = Column(String, unique=True, index=True)
-    name = Column(String, nullable=True) # Session name for reporting
+    code = Column(String(50), unique=True, index=True)
+    name = Column(String(255), nullable=True) # Session name for reporting
     host_id = Column(Integer, ForeignKey("users.id"))
     
-    status = Column(String, default="WAITING") # WAITING, ACTIVE, ENDED
+    status = Column(String(50), default="WAITING") # WAITING, ACTIVE, ENDED
     
     time_limit_minutes = Column(Integer, nullable=True)
     question_ids = Column(JSON, nullable=True)
@@ -66,8 +66,8 @@ class Question(Base):
     __tablename__ = "questions"
 
     id = Column(Integer, primary_key=True, index=True)
-    question_text = Column(String)
-    image_data = Column(String, nullable=True) # Base64 or URL
+    question_text = Column(Text)
+    image_data = Column(Text, nullable=True) # Base64 or URL
     options = Column(JSON) # List of strings or objects {text, image_data}
     correct_answer_index = Column(Integer)
     
@@ -77,8 +77,8 @@ class QuestionSet(Base):
     __tablename__ = "question_sets"
     
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    description = Column(String, nullable=True)
+    name = Column(String(255), index=True)
+    description = Column(String(1000), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     questions = relationship("Question", secondary=question_set_questions, back_populates="question_sets")
