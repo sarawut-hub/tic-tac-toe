@@ -25,6 +25,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Install dependencies (backend)
         working-directory: backend
         run: |
@@ -44,14 +52,19 @@ jobs:
             echo "No tests detected, skipping"
           fi
 
-      # Upload only the backend folder as the deployment artifact
+      - name: Prepare deploy package
+        run: |
+          rm -rf deploy-package
+          mkdir deploy-package
+          cp -R backend/. deploy-package/
+          cp backend/requirements.txt deploy-package/ || true
+
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: backend
+          name: backend-package
           path: |
-            backend
-            !backend/.venv
+            deploy-package
 
       # 🚫 Opting Out of Oryx Build
       # If you prefer to disable the Oryx build process during deployment, follow these steps:
@@ -67,8 +80,8 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: backend
-          path: backend
+          name: backend-package
+          path: deploy-package
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -77,4 +90,4 @@ jobs:
           app-name: 'tic-tac-toe-backend'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_06C38E2F177C4B958C174E1FA8DA6870 }}
-          package: '.'
+          package: './deploy-package'
