@@ -82,9 +82,7 @@ seed_questions()
 app = FastAPI()
 
 ORIGINS = [
-    "http://localhost:5173",
-    "https://sarawut-hub.github.io",
-    "https://tic-tac-toe-nwbp.onrender.com"
+    "*"
 ] # os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
 app.add_middleware(
