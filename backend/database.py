@@ -81,7 +81,10 @@ engine_kwargs = {
 # Add connection pooling parameters for MySQL to prevent "server has gone away" errors
 if "mysql" in DATABASE_URL:
     engine_kwargs["pool_pre_ping"] = True
-    engine_kwargs["pool_recycle"] = 3600
+    engine_kwargs["pool_recycle"] = 1800  # Recycle every 30 mins
+    engine_kwargs["pool_size"] = 20       # Keep 20 persistent connections
+    engine_kwargs["max_overflow"] = 40    # Allow up to 60 total connections under load
+    engine_kwargs["pool_timeout"] = 30    # Wait up to 30s for a free connection
 
 engine = create_engine(DATABASE_URL, **engine_kwargs)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
