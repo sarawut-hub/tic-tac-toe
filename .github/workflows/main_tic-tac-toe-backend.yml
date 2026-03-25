@@ -90,4 +90,3 @@ jobs:
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_06C38E2F177C4B958C174E1FA8DA6870 }}
           package: './deploy-package'
-          startup-command: 'bash startup.sh'
