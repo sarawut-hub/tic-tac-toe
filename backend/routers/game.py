@@ -187,14 +187,16 @@ async def handle_game_end(result: str, user: models.User, db: Session, board: Li
     if session_code:
         session = db.query(models.GameSession).filter(models.GameSession.code == session_code).first()
         if session and session.status == "ACTIVE":
+             # Lock the player row to prevent concurrent score corruption
              player = db.query(models.SessionPlayer).filter(
                  models.SessionPlayer.session_id == session.id,
                  models.SessionPlayer.user_id == user.id
-             ).first()
+             ).with_for_update().first()
              if player:
                 if result == "win":
                     player.session_score += 1 
                 session_score = player.session_score
+
                 
                 # Notify via WebSocket
                 await manager.broadcast({
