@@ -16,7 +16,7 @@ router = APIRouter()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey")
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 class EmployeeLogin(BaseModel):
     employee_id: str
@@ -41,7 +41,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -111,7 +111,8 @@ def login_employee(login_data: EmployeeLogin, response: Response, db: Session = 
         value=token,
         httponly=True, 
         samesite='None' if is_prod else 'Lax',
-        secure=is_prod
+        secure=is_prod,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
     
     return {"access_token": token, "token_type": "bearer", "user": user}
@@ -193,7 +194,8 @@ async def callback_github(code: str, db: Session = Depends(get_db)):
             value=token,
             httponly=True,
             samesite='None' if is_prod else 'Lax',
-            secure=is_prod
+            secure=is_prod,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
         )
         return response
 
@@ -270,7 +272,8 @@ async def callback_google(code: str, db: Session = Depends(get_db)):
             value=token,
             httponly=True,
             samesite='None' if is_prod else 'Lax',
-            secure=is_prod
+            secure=is_prod,
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60
         )
         return response
 

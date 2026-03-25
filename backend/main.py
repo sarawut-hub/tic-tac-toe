@@ -91,13 +91,11 @@ seed_questions()
 
 app = FastAPI()
 
-ORIGINS = [
-    "*"
-] # os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
-
+# We use allow_origin_regex=".*" to allow any origin dynamically
+# because browsers reject allow_origins=["*"] when allow_credentials=True
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ORIGINS, # ระบุเจาะจงแทน * เพื่อรองรับ allow_credentials=True
+    allow_origin_regex=".*", 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
