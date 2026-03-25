@@ -10,7 +10,17 @@ from database import SessionLocal
 models.Base.metadata.create_all(bind=engine)
 
 from sqlalchemy import inspect, text
+import logging
+
+# Basic logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 def run_migrations():
+    # Show database type (obfuscated)
+    db_type = engine.url.drivername
+    logger.info(f"Connecting to database: {db_type}")
+    
     inspector = inspect(engine)
     db = SessionLocal()
     try:
