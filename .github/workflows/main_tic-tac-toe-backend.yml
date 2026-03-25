@@ -68,6 +68,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: backend
+          path: backend
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
@@ -76,4 +77,4 @@ jobs:
           app-name: 'tic-tac-toe-backend'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_06C38E2F177C4B958C174E1FA8DA6870 }}
-          package: './backend'
+          package: '.'
