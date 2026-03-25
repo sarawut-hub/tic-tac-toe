@@ -18,8 +18,12 @@ def read_users_me(current_user: schemas.User = Depends(get_current_user)):
 
 @router.post("/game/move", response_model=schemas.GameResultResponse)
 async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_user)):
-    user = current_user
     session_score = None
+    
+    # Re-fetch user WITH a row-level lock to prevent concurrent write conflicts
+    user = db.query(models.User).filter(models.User.id == current_user.id).with_for_update().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     
     # Get current state
     target_obj = user
@@ -27,10 +31,11 @@ async def make_move(move: schemas.MoveRequest, db: Session = Depends(get_db), cu
         session = db.query(models.GameSession).filter(models.GameSession.code == move.session_code).first()
         if not session:
             raise HTTPException(status_code=404, detail="Session not found")
+        # Lock the player row too
         player = db.query(models.SessionPlayer).filter(
             models.SessionPlayer.session_id == session.id,
             models.SessionPlayer.user_id == user.id
-        ).first()
+        ).with_for_update().first()
         if not player:
             raise HTTPException(status_code=404, detail="Player not in session")
         target_obj = player
@@ -292,7 +297,10 @@ async def submit_quiz_answer(answer: schemas.QuizAnswerSubmit, db: Session = Dep
 
 @router.get("/leaderboard", response_model=List[schemas.User])
 def get_leaderboard(db: Session = Depends(get_db)):
-    users = db.query(models.User).order_by(models.User.score.desc(), models.User.total_time_taken.asc()).all()
+    users = db.query(models.User).order_by(
+        models.User.score.desc(), 
+        models.User.total_time_taken.asc()
+    ).limit(100).all()
     return users
 
 @router.post("/admin/reset", status_code=status.HTTP_200_OK)
