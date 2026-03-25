@@ -48,7 +48,7 @@ jobs:
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
-          name: python-app
+          name: backend
           path: |
             backend
             !backend/.venv
@@ -67,7 +67,7 @@ jobs:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
-          name: python-app
+          name: backend
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
