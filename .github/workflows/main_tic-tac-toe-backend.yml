@@ -7,7 +7,6 @@ name: Build and deploy Python app to Azure Web App - tic-tac-toe-backend
 on:
   push:
     branches:
-      - main
       - townhall
   workflow_dispatch:
 

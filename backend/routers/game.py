@@ -8,6 +8,7 @@ import random
 import game_logic
 import time
 from websocket_manager import manager
+from typing import Optional
 
 router = APIRouter()
 
